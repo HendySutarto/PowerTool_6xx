@@ -1,4 +1,4 @@
-library Powertool6XX;
+library Powertool6X;
 
 {
   TITLE           : Powertool6 Project
@@ -36,16 +36,25 @@ library Powertool6XX;
 
 {
 
+    From 2018.03.25.SUN, GitHub is used for version control, so that, I don’t want to have headache
+    in maintaining version control.
+
+    As such filenaming will be only Powertool6X to with X in the end to denote flexible versioning.
+
+    At the end of each build, the file will be staged, committed, and pushed to remote.
+
+
     VERSIONING NAMING
-    
+    -----------------
+
     Powertool601.dll
-    
+
     The library version is named Powertool601 ; 6 is the version, the 01 is the build.
-    
+
     Last two digit can continue 01, 02, 03, to 99.
-    
-    
-    
+
+
+
 
     Ver_5_20180311
     --------------
@@ -164,7 +173,7 @@ type
 
     //** Ver_4_20180204 **
     TMarketMode         = (RALLY , JAGGY , FLIPFLOP, CANTTELL_RALLYORJAGGYORFLIPFLOP );
-    
+
 
 
 {///////////////////////////////////////////////////////////////////////////////////////////////////////}
@@ -254,19 +263,24 @@ var
 
 
     { Added in Ver_3_20180126 }
-    { Ver_5_20180311 ** This may be redundant ** }    
+    { Ver_5_20180311 ** This may be redundant ** }
     gSetup_D1_FlipFlop_Buy      : boolean               ;
     gSetup_D1_FlipFlop_Sell     : boolean               ;
-    
+
 
     {** Setup Rule Daily Token **}
     // Added in Ver_3_20180126
-    
+
     { Rule 1 = Rally }
     { Rule 2 = Jaggy }
     { Rule 3 = Flip Flop }
     { Rule 4 = All 3 above }
-    
+
+    // Token counter (new one)
+    gDay_Token_Trig_Rall_Extr_Main_Count   : integer    ;
+    gDay_Token_Trig_Rall_Extr_Tand_Count   : integer    ;
+
+
     gDailyToken_Seq_1_rule_1    : boolean               ;
     gDailyToken_Seq_2_rule_1    : boolean               ;
     gD1_RecentClose             : double                ;
@@ -278,16 +292,9 @@ var
 
     gDailyToken_Seq_1_rule_3    : boolean               ;
     gDailyToken_Seq_2_rule_3    : boolean               ;
-    
-    { Up to 6 token for all }
-    gDailyToken_Seq_1_rule_4    : boolean               ;
-    gDailyToken_Seq_2_rule_4    : boolean               ;
-    gDailyToken_Seq_3_rule_4    : boolean               ;
-    gDailyToken_Seq_4_rule_4    : boolean               ;
-    gDailyToken_Seq_5_rule_4    : boolean               ;
-    gDailyToken_Seq_6_rule_4    : boolean               ;
 
-    
+
+
     // H1 - Indicators
     // ---------------------------------------------------------------------------------
 
@@ -301,16 +308,25 @@ var
     {** Ver_5_20180311 **}
     gSetup_H1_Rally_Buy         : boolean               ;
     gSetup_H1_Rally_Sell        : boolean               ;
-    
+
+
+    gH1_Setup_Rall_extr_Buy   : boolean                 ;
+    gH1_Setup_Rall_extr_Sell  : boolean                 ;
+
     gSetup_H1_Jaggy_Buy         : boolean               ;
     gSetup_H1_Jaggy_Sell        : boolean               ;
 
     gSetup_H1_FlipFlop_Buy      : boolean               ;
-    gSetup_H1_FlipFlop_Sell     : boolean               ;    
-    
+    gSetup_H1_FlipFlop_Sell     : boolean               ;
 
+
+    {** Hourly Token **}
     {** Trigger one entry per hour **}
     gH1_Token_Trigger           : boolean               ;
+
+
+    gH1_Token_Trig_Rall_Extr_Main_Count : integer       ;
+    gH1_Token_Trig_Rall_Extr_Tand_Count : integer       ;
 
 
 
@@ -323,7 +339,7 @@ var
 
     {** BarWave_H1 **}
     gBarWave_H1_Handle          : integer               ;
-    
+
     gBarWave_H1_val_1,
     gBarWave_H1_val_2,
     gBarWave_H1_val_3,
@@ -334,7 +350,7 @@ var
     gBarWave_H1_Exit_Handle     : integer               ;
     gBarWave_H1_Exit_val_1      : double                ;
     gBarWave_H1_Exit_val_2      : double                ;
-    
+
 
 
 
@@ -365,13 +381,33 @@ var
     gMACDH_M5_val_2             : double                ;
     gMACDH_M5_val_3             : double                ;
 
+    // EMA 5/20
+
+    gM5_EMA_5_Handle            : integer               ;
+    gM5_EMA_5_val_1             : double                ;
+    gM5_EMA_5_val_2             : double                ;
+
+    gM5_EMA_20_Handle           : integer               ;
+    gM5_EMA_20_val_1            : double                ;
+    gM5_EMA_20_val_2            : double                ;
+
+
+    // RL Regression Line 12 / 30
+
+    gM5_RL_10_Handle            : integer               ;
+    gM5_RL_10_val_1             : double                ;
+    gM5_RL_10_val_2             : double                ;
+
+    gM5_RL_30_Handle            : integer               ;
+    gM5_RL_30_val_1             : double                ;
+    gM5_RL_30_val_2             : double                ;
 
     gBollingerM5_Handle         : integer               ;
-    
+
     gBollingerM5_val_1_TopBand  : double                ;
     gBollingerM5_val_1_MidBand  : double                ;
     gBollingerM5_val_1_BotBand  : double                ;
-    
+
     gBollingerM5_val_2_TopBand  : double                ;
     gBollingerM5_val_2_MidBand  : double                ;
     gBollingerM5_val_2_BotBand  : double                ;
@@ -379,26 +415,35 @@ var
     gBollingerM5_val_3_TopBand  : double                ;
     gBollingerM5_val_3_MidBand  : double                ;
     gBollingerM5_val_3_BotBand  : double                ;
-    
-    // M5 - Setup on Ver_3_20180126
+
+
+    // M5 - Setups
     // -------------------------------------------
 
     gOversold_M5                : boolean               ;
     gOverbought_M5              : boolean               ;
+
+    gM5_Setup_BollBand_Overbought   : boolean           ;
+    gM5_Setup_BollBand_Oversold     : boolean           ;
 
 
     // M5 - Triggers
     // -------------------------------------------
 
     {** Trigger M5 **}
-    //** Ver_2_20180114  **
-    gTrigger_M5_Sell            : boolean               ;
-    gTrigger_M5_Buy             : boolean               ;
 
-    // Ver_3_20180126
-    gTrigger_M5_Buy_Market_Rally    : boolean           ;
-    gTrigger_M5_Sell_Market_Rally   : boolean           ;
-    
+    // 25 MAR 2018
+    gTrigger_M5_Buy_Rally_Standard    : boolean         ;
+    gTrigger_M5_Sell_Rally_Standard   : boolean         ;
+
+
+    gTrigger_M5_Buy_Rall_extr_retrac  : boolean         ;
+    gTrigger_M5_Sell_Rall_extr_retrac : boolean         ;
+
+
+    gM5_RL10_RL30_Posi_Curr         : string            ;
+    gM5_RL10_RL30_Posi_Prev         : string            ;
+
     gTrigger_M5_Buy_Market_Jaggy    : boolean           ;
     gTrigger_M5_Sell_Market_Jaggy   : boolean           ;
 
@@ -520,8 +565,8 @@ var
         _text       :   string      ;
 begin
 
-    if (gMarketMode <> RALLY) and (gMarketMode <> CANTTELL_RALLYORJAGGYORFLIPFLOP) then exit ; 
-    
+    if (gMarketMode <> RALLY) and (gMarketMode <> CANTTELL_RALLYORJAGGYORFLIPFLOP) then exit ;
+
     {===================================================================================================}
     {  INDICATOR VALUE RETRIEVAL  }
     {===================================================================================================}
@@ -538,16 +583,20 @@ begin
 
     // SETUP D1 - RALLY
     // -------------------------------------------
+    // ENTRY_MANAGEMENT_RALLY_STANDARD
 
     if gBarName_D1_FirstTick then
     begin
+
+        Print(  '[ENTRY_MANAGEMENT_RALLY_STANDARD]: DAILY TICK' );
+
 
         SetCurrencyAndTimeframe( gCurrency , PERIOD_D1 );   // To set price picking on D1
 
         // Set setup FALSE daily until retracement below recent close
         gOversold_M5    := false;
         gOverbought_M5  := false ;
-        
+
 
 
         // Set daily tokens true at opening bar
@@ -572,7 +621,7 @@ begin
         gBarWave_D1_val_2   := GetIndicatorValue( gBarWave_D1_Handle , 2, 4 );
 
 
-        { Print(  '[ENTRY_MANAGEMENT]: RALLY MODE First Tick D1 ' + }
+        { Print(  '[ENTRY_MANAGEMENT_RALLY_STANDARD]: First Tick D1 ' + }
                 { 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' + }
                 { 'Open(1)-D1: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' + }
                 { 'Close(1)-D1: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' + }
@@ -613,7 +662,7 @@ begin
                                     (Open(1)    < gDriftline_D1_val_1)
                                 and (Close(1)   < gDriftline_D1_val_1)
                                 and (Open(1) >= Close(1) )
-                                and (gD1_DayName_Curr <> 'Sun')                                
+                                and (gD1_DayName_Curr <> 'Sun')
                                     // Recent bar is RED in Ver_3_20180126
 
                             )
@@ -650,13 +699,13 @@ begin
 
 
                 Str( gSetup_D1_Rally_Buy , _text );
-                Print( 'gSetup_D1_Rally_Buy: ' + _text );
+                Print( 'gSetup_D1_Rally_Buy STANDARD: ' + _text );
 
                 Str( gSetup_D1_Rally_Sell , _text );
-                Print( 'gSetup_D1_Rally_Sell: ' + _text );
+                Print( 'gSetup_D1_Rally_Sell STANDARD: ' + _text );
 
                 Str( gSetup_D1_StayAway , _text );
-                Print( 'gSetup_D1_StayAway: ' + _text );
+                Print( 'gSetup_D1_StayAway STANDARD: ' + _text );
 
             end;
 
@@ -664,7 +713,8 @@ begin
 
     // SETUP H1 - RALLY
     // ---------------------------------------------------------------------------------
-    // *** IMPORTANT: Ver_3_20180126 does not use H1 !!!
+    // ENTRY_MANAGEMENT_RALLY_STANDARD
+
 
     if gBarName_H1_FirstTick then
     begin
@@ -672,10 +722,10 @@ begin
         { Left as placeholder }
 
         SetCurrencyAndTimeframe( gCurrency , PERIOD_H1 );
-        
+
         gH1_Token_Trigger   := false ;
         { one hour only one entry }
-        
+
 
         { gDriftline_H1_val_1 := GetIndicatorValue( gDriftline_H1_Handle, 3 , 0 ); }
         { gDriftline_H1_val_2 := GetIndicatorValue( gDriftline_H1_Handle, 4 , 0 ); }
@@ -699,7 +749,7 @@ begin
 
 
 
-        { Print(  '[ENTRY_MANAGEMENT_RALLY]: 1st Tick H1 ' + }
+        { Print(  '[ENTRY_MANAGEMENT_RALLY_STANDARD]: 1st Tick H1 ' + }
                 { 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )           + ' / ' + }
                 { 'Open(1)-H1: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )                   + ' / ' + }
                 { 'Close(1)-H1: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )                  + ' / ' + }
@@ -709,9 +759,9 @@ begin
                 { //'Driftline_H1: '+ FloatToStrF( gDriftline_H1_val_1 , ffFixed , 6, 4 ) }
                 { ); }
 
-                
-                
-                
+
+
+
         gSetup_H1_Rally_Buy :=  (   // First hour
                             (
                                     gSetup_D1_Rally_Buy
@@ -728,15 +778,15 @@ begin
                                 and ( gBarWave_H1_val_3 < gBarWave_H1_val_4 )
                             )
             );
-            
-        gSetup_H1_Rally_Sell :=  (  
+
+        gSetup_H1_Rally_Sell :=  (
                             (       // First hour
                                     gSetup_D1_Rally_Sell
                                 and ( gBarWave_H1_val_2 > 0.0 )
                                 and ( gBarWave_H1_val_2 > gBarWave_H1_val_1 )
                                 and ( gBarWave_H1_val_2 > gBarWave_H1_val_3 )
                             )
-                            or  
+                            or
                             (       // Second hour
                                     gSetup_D1_Rally_Sell
                                 and ( gBarWave_H1_val_3 > 0.0 )
@@ -745,8 +795,8 @@ begin
                                 and ( gBarWave_H1_val_3 > gBarWave_H1_val_4 )
                             )
 
-            );            
-        
+            );
+
         { gSetup_H1_Buy_Opt_1 := ( }
                                     { gSetup_D1_Buy_Bar_Red }
                                 { and ( Close(1) > gDriftline_H1_val_1 ) }
@@ -764,7 +814,7 @@ begin
                                 { and ( Close(1)  < gDriftline_H1_val_1 ) }
                                 { and ( Open(1)   < gDriftline_H1_val_1 ) }
                                 { and ( gDriftline_H1_val_1 < gDriftline_H1_val_2 ) }
-            
+
         { gSetup_H1_Sell_Opt_2    := ( }
                                     { gSetup_D1_Jaggy_Sell }
                                 { and ( Close(1)  < gDriftline_H1_val_1 ) }
@@ -800,20 +850,20 @@ begin
                 Print('*** gBarName_H1_FirstTick RALLY event found: ***');
 
                 Str( gSetup_D1_Rally_Buy , _text );
-                Print( 'gSetup_D1_Rally_Buy: ' + _text );
+                Print( 'gSetup_D1_Rally_Buy STANDARD: ' + _text );
                 Str( gSetup_D1_Rally_Sell , _text );
-                Print( 'gSetup_D1_Rally_Sell: ' + _text );
+                Print( 'gSetup_D1_Rally_Sell STANDARD: ' + _text );
 
                 if gSetup_H1_Rally_Buy then
                 begin
                     Str( gSetup_H1_Rally_Buy , _text );
-                    Print('gSetup_H1_Rally_Buy: ' + _text );
+                    Print('gSetup_H1_Rally_Buy STANDARD: ' + _text );
                 end;
 
                 if gSetup_H1_Rally_Sell then
                 begin
                     Str( gSetup_H1_Rally_Sell , _text );
-                    Print('gSetup_H1_Rally_Sell: ' + _text );
+                    Print('gSetup_H1_Rally_Sell STANDARD: ' + _text );
                 end;
 
             end;
@@ -830,6 +880,8 @@ begin
 
     // TRIGGER M5 - RALLY
     // ---------------------------------------------------------------------------------
+    // ENTRY_MANAGEMENT_RALLY_STANDARD
+
     // Ver_3_20180126
     // Trigger type 1 is when blue bar race in uptrend (likewise red bar race in downtrend)
     // Buying at the D1 tip of oversold or sell at D1 the tip of overbought
@@ -865,31 +917,37 @@ begin
         { else if ( (gRSI3_M5_val_1 < 30.0) and (gRSI3_M5_val_2 >= 30.0) ) then }
             { gRSI3_M5_MomentumEvent := MOMEN_DOWN; }
 
-            
+
         gMACDH_M5_val_1     := GetIndicatorValue( gMACDH_M5_Handle, 1 , 4 );
         gMACDH_M5_val_2     := GetIndicatorValue( gMACDH_M5_Handle, 2 , 4 );
         gMACDH_M5_val_3     := GetIndicatorValue( gMACDH_M5_Handle, 3 , 4 );
 
 
-        
+
         gBollingerM5_val_1_TopBand :=  GetIndicatorValue( gBollingerM5_Handle , 1 , 0 );
         gBollingerM5_val_1_MidBand :=  GetIndicatorValue( gBollingerM5_Handle , 1 , 1 );
         gBollingerM5_val_1_BotBand :=  GetIndicatorValue( gBollingerM5_Handle , 1 , 2 );
-        
+
         gBollingerM5_val_2_TopBand :=  GetIndicatorValue( gBollingerM5_Handle , 2 , 0 );
         gBollingerM5_val_2_MidBand :=  GetIndicatorValue( gBollingerM5_Handle , 2 , 1 );
         gBollingerM5_val_2_BotBand :=  GetIndicatorValue( gBollingerM5_Handle , 2 , 2 );
-        
+
         gBollingerM5_val_3_TopBand :=  GetIndicatorValue( gBollingerM5_Handle , 3 , 0 );
         gBollingerM5_val_3_MidBand :=  GetIndicatorValue( gBollingerM5_Handle , 3 , 1 );
         gBollingerM5_val_3_BotBand :=  GetIndicatorValue( gBollingerM5_Handle , 3 , 2 );
 
-        
+        // Regression Line
+        gM5_RL_10_val_1     :=  GetIndicatorValue( gM5_RL_10_Handle , 1 , 0 );
+        gM5_RL_10_val_2     :=  GetIndicatorValue( gM5_RL_10_Handle , 2 , 0 );
+
+        gM5_RL_30_val_1     :=  GetIndicatorValue( gM5_RL_30_Handle , 1 , 0 );
+        gM5_RL_30_val_2     :=  GetIndicatorValue( gM5_RL_30_Handle , 2 , 0 );
+
         {
         The momentum event happens *ONLY* at first tick of M5 bar!
         }
 
-        { gTrigger_M5_Buy_Market_Rally    := (   }
+        { gTrigger_M5_Buy_Rally_Standard    := (   }
                                 { gSetup_H1_Rally_Buy }
                             { and ( gMACDH_M5_val_2 < 0.0 ) }
                             { and ( gMACDH_M5_val_2 < gMACDH_M5_val_1 ) }
@@ -897,9 +955,9 @@ begin
                                 { and ( gDailyToken_Seq_1_rule_1 or gDailyToken_Seq_2_rule_1 )                             }
                                 { and ( gH1_Token_Trigger = false ) }
                 { ); }
-        
-        
-        { gTrigger_M5_Sell_Market_Rally    := (   }
+
+
+        { gTrigger_M5_Sell_Rally_Standard    := (   }
                                 { gSetup_H1_Rally_Sell }
                             { and ( gMACDH_M5_val_2 > 0.0 ) }
                             { and ( gMACDH_M5_val_2 > gMACDH_M5_val_1 ) }
@@ -907,57 +965,78 @@ begin
                                 { and ( gDailyToken_Seq_1_rule_1 or gDailyToken_Seq_2_rule_1 )                             }
                                 { and ( gH1_Token_Trigger = false ) }
                 { ); }
-                
-        gTrigger_M5_Buy_Market_Rally  := (
-                                    gSetup_D1_Rally_Buy       // Ver_3_20180126 
+
+        { gTrigger_M5_Buy_Rally_Standard  := ( }
+                                    { gSetup_D1_Rally_Buy       // Ver_3_20180126 }
+                            { and     gOversold_M5 }
+                            { and     ( Close(2) < gBollingerM5_val_2_BotBand ) }
+                            { and     ( Close(2) < gD1_RecentClose )      // Find the tips }
+                            { and ( gMACDH_M5_val_2 < 0.0 ) }
+                            { and ( gMACDH_M5_val_2 < gMACDH_M5_val_1 )       // V Pattern with M5 }
+                            { and ( gMACDH_M5_val_2 < gMACDH_M5_val_3 )       // V Pattern with M5 }
+                                { and (gDailyToken_Seq_1_rule_1 or gDailyToken_Seq_2_rule_1)    // two triggers per day }
+                                { and ( gH1_Token_Trigger = false )           // one trigger per hour }
+                            { ); }
+
+        { gTrigger_M5_Sell_Rally_Standard :=  ( }
+                                    { gSetup_D1_Rally_Sell }
+                            { and     gOverbought_M5 }
+                            { and     ( Close(2) > gBollingerM5_val_2_TopBand ) }
+                            { and     ( Close(2) > gD1_RecentClose )      // Find the antenna }
+                            { and ( gMACDH_M5_val_2 > 0.0 ) }
+                            { and ( gMACDH_M5_val_2 > gMACDH_M5_val_1 )   // inverted-V with M5 }
+                            { and ( gMACDH_M5_val_2 > gMACDH_M5_val_3 )   // inverted-V with M5 }
+                                { and (gDailyToken_Seq_1_rule_1 or gDailyToken_Seq_2_rule_1)    // two triggers per day }
+                                { and ( gH1_Token_Trigger = false )               // one trigger per hour }
+                            { ); }
+
+        gTrigger_M5_Buy_Rally_Standard  := (
+                                    gSetup_D1_Rally_Buy       // Ver_3_20180126
                             and     gOversold_M5
                             and     ( Close(2) < gBollingerM5_val_2_BotBand )
-                            and     ( Close(2) < gD1_RecentClose )      // Find the tips
-                            and ( gMACDH_M5_val_2 < 0.0 )
-                            and ( gMACDH_M5_val_2 < gMACDH_M5_val_1 )
-                            and ( gMACDH_M5_val_2 < gMACDH_M5_val_3 )
-                                and (gDailyToken_Seq_1_rule_1 or gDailyToken_Seq_2_rule_1)    // two opportunities
-                                and ( gH1_Token_Trigger = false )           // one signal per hour
+                            and     ( Close(2) < gD1_RecentClose )      // Find the tips                            
+                            and ( gM5_RL_10_val_1 >  gM5_RL_30_val_1 )
+                            and ( gM5_RL_10_val_2 <= gM5_RL_30_val_2 )
+                                and (gDailyToken_Seq_1_rule_1 or gDailyToken_Seq_2_rule_1)    // two triggers per day
+                                and ( gH1_Token_Trigger = false )           // one trigger per hour
                             );
 
-        gTrigger_M5_Sell_Market_Rally :=  (
+        gTrigger_M5_Sell_Rally_Standard :=  (
                                     gSetup_D1_Rally_Sell
                             and     gOverbought_M5
                             and     ( Close(2) > gBollingerM5_val_2_TopBand )
                             and     ( Close(2) > gD1_RecentClose )      // Find the antenna
-                            and ( gMACDH_M5_val_2 > 0.0 )               
-                            and ( gMACDH_M5_val_2 > gMACDH_M5_val_1 )
-                            and ( gMACDH_M5_val_2 > gMACDH_M5_val_3 )                                                            
-                                and (gDailyToken_Seq_1_rule_1 or gDailyToken_Seq_2_rule_1)    // two opportunities
-                                and ( gH1_Token_Trigger = false )               // one signal per hour
-                            );                
-                
-                
-        { gTrigger_M5_Buy_Market_Rally    := (   }
+                            and ( gM5_RL_10_val_1 <  gM5_RL_30_val_1 )
+                            and ( gM5_RL_10_val_2 >= gM5_RL_30_val_2 )                            
+                                and (gDailyToken_Seq_1_rule_1 or gDailyToken_Seq_2_rule_1)    // two triggers per day
+                                and ( gH1_Token_Trigger = false )               // one trigger per hour
+                            );
+                            
+        { gTrigger_M5_Buy_Rally_Standard    := (   }
                                 { gSetup_H1_Rally_Buy }
                             { and ( gRSI3_M5_val_1 > 50.0 ) }
                             { and ( gRSI3_M5_val_2 <= 50.0 )                             }
                                 { and ( gDailyToken_Seq_1_rule_1 or gDailyToken_Seq_2_rule_1 )                             }
                                 { and ( gH1_Token_Trigger = false ) }
                 { ); }
-        
-        
-        { gTrigger_M5_Sell_Market_Rally    := (   }
+
+
+        { gTrigger_M5_Sell_Rally_Standard    := (   }
                                 { gSetup_H1_Rally_Sell                             }
                             { and ( gRSI3_M5_val_1 < 50.0 ) }
                             { and ( gRSI3_M5_val_2 >= 50.0 ) }
                                 { and ( gDailyToken_Seq_1_rule_1 or gDailyToken_Seq_2_rule_1 )                             }
                                 { and ( gH1_Token_Trigger = false ) }
                 { ); }
-                
-        { gTrigger_M5_Buy_Market_Rally  := ( }
+
+        { gTrigger_M5_Buy_Rally_Standard  := ( }
                                     { gSetup_D1_Rally_Buy       // Ver_3_20180126  }
                                 { and gOversold_M5 }
                                 { and (gDailyToken_Seq_1_rule_1 or gDailyToken_Seq_2_rule_1)    // two opportunities }
                                 { and (gRSI3_M5_MomentumEvent = MOMEN_UP) }
                             { ); }
 
-        { gTrigger_M5_Sell_Market_Rally :=  ( }
+        { gTrigger_M5_Sell_Rally_Standard :=  ( }
                                     { gSetup_D1_Rally_Sell }
                                 { and gOverbought_M5 }
                                 { and (gDailyToken_Seq_1_rule_1 or gDailyToken_Seq_2_rule_1)    // two opportunities }
@@ -969,12 +1048,12 @@ begin
         // Cancel daily setups for this trigger
         // -------------------------------------------
 
-        if gTrigger_M5_Buy_Market_Rally then
+        if gTrigger_M5_Buy_Rally_Standard then
         begin
 
             // After one trigger, cancel hourly token
             gH1_Token_Trigger := true ;
-            
+
             // After one trigger, cancel the gOversold_M5
             gOversold_M5    := false ;
 
@@ -986,7 +1065,7 @@ begin
 
         end;
 
-        if gTrigger_M5_Sell_Market_Rally then
+        if gTrigger_M5_Sell_Rally_Standard then
         begin
 
             // After one trigger, cancel hourly token
@@ -1007,18 +1086,18 @@ begin
 
         {**********  ADD PRINTS FOR trigger settings ***********}
 
-                if gTrigger_M5_Buy_Market_Rally then
+                if gTrigger_M5_Buy_Rally_Standard then
                 begin
-                    Str( gTrigger_M5_Buy_Market_Rally , _text );
-                    Print('gTrigger_M5_Buy_Market_Rally: ' + _text );
+                    Str( gTrigger_M5_Buy_Rally_Standard , _text );
+                    Print('gTrigger_M5_Buy_Rally_Standard: ' + _text );
                 end;
 
-                if gTrigger_M5_Sell_Market_Rally then
+                if gTrigger_M5_Sell_Rally_Standard then
                 begin
-                    Str( gTrigger_M5_Sell_Market_Rally , _text );
-                    Print('gTrigger_M5_Sell_Market_Rally: ' + _text );
-                end;        
-        
+                    Str( gTrigger_M5_Sell_Rally_Standard , _text );
+                    Print('gTrigger_M5_Sell_Rally_Standard: ' + _text );
+                end;
+
     end;
 
 
@@ -1026,20 +1105,21 @@ begin
 
     // MARKING THE CHART WITH TRIGGER M5 - RALLY
     // ---------------------------------------------------------------------------------
+    // ENTRY_MANAGEMENT_RALLY_STANDARD
 
-    if gTrigger_M5_Buy_Market_Rally then
+    if gTrigger_M5_Buy_Rally_Standard then
     begin
 
         SetCurrencyAndTimeframe( gCurrency , PERIOD_M5 );
 
-        Print(  '[ENTRY_MANAGEMENT_RALLY]: 1st Tick M5 BUY Signal ' +
+        Print(  '[ENTRY_MANAGEMENT_RALLY_STANDARD]: 1st Tick M5 BUY Signal ' +
                 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
                 'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
                 'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )
                 //'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 )
                 );
 
-        gTextName := 'TGR_RALLY_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
+        gTextName := 'TGR_RALL_STAN_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
         if not(ObjectExists( gTextName )) then
         begin
             ObjectCreate( gTextName, obj_Text, 0, TimeCurrent, (Bid+Ask)/2 );
@@ -1049,17 +1129,17 @@ begin
         end;
 
     end
-    else if gTrigger_M5_Sell_Market_Rally then
+    else if gTrigger_M5_Sell_Rally_Standard then
     begin
 
-        Print(  '[ENTRY_MANAGEMENT_RALLY]: 1st Tick M5 SELL Signal ' +
+        Print(  '[ENTRY_MANAGEMENT_RALLY_STANDARD]: 1st Tick M5 SELL Signal ' +
                 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
                 'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
                 'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )
                 //'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 )
                 );
 
-        gTextName := 'TGR_RALLY_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
+        gTextName := 'TGR_RALL_STAN_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
         if not(ObjectExists( gTextName )) then
         begin
             ObjectCreate( gTextName, obj_Text, 0, TimeCurrent, (Bid+Ask)/2 );
@@ -1079,6 +1159,596 @@ begin
 
 
 end;
+
+
+
+
+procedure ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC ; stdcall ;
+var
+        _text               :   string      ;
+        _mov_avg_signal     :   boolean     ;
+begin
+
+    if (gMarketMode <> RALLY) and (gMarketMode <> CANTTELL_RALLYORJAGGYORFLIPFLOP) then exit ;
+
+    {===================================================================================================}
+    {  INDICATOR VALUE RETRIEVAL  }
+    {===================================================================================================}
+    { This procedure operates on the first tick of M5 }
+
+    gATR_M5_val_1 := GetIndicatorValue( gATR_M5_Handle , 1, 0  );
+
+
+    {===================================================================================================}
+    {  SIGNAL GENERATION: Consider all setups, then trigger  }
+    {===================================================================================================}
+
+
+
+    // SETUP D1 - RALLY
+    // -------------------------------------------
+    // ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC
+
+
+    if gBarName_D1_FirstTick then
+    begin
+
+        SetCurrencyAndTimeframe( gCurrency , PERIOD_D1 );   // To set price picking on D1
+
+        // Set setup FALSE daily until retracement below recent close
+
+        gM5_Setup_BollBand_Overbought   := false ;
+        gM5_Setup_BollBand_Oversold     := false ;
+
+
+        // Set daily tokens zero for the trigger on this rule
+        gDay_Token_Trig_Rall_Extr_Main_Count  := 0    ;
+        gDay_Token_Trig_Rall_Extr_Tand_Count  := 0    ;
+
+
+        // Recent closing price
+        gD1_RecentClose     := Close(1);
+
+
+        gDriftline_D1_val_1 := GetIndicatorValue( gDriftline_D1_Handle , 3, 0 );
+        { The index for driftline value 1 recent bar has to be 3, not 1 ! }
+
+        gDriftline_D1_val_2 := GetIndicatorValue( gDriftline_D1_Handle , 4 , 0 );
+        { The index for driftline value 2 recent bar has to be 4, not 1 !
+          Ver_3_20180126 }
+        gDriftline_D1_val_3 := GetIndicatorValue( gDriftline_D1_Handle , 5 , 0 );
+
+
+        gBarWave_D1_val_1   := GetIndicatorValue( gBarWave_D1_Handle , 1, 4 );
+        gBarWave_D1_val_2   := GetIndicatorValue( gBarWave_D1_Handle , 2, 4 );
+
+
+        Print(  '[ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC]: First Tick D1 ' +
+                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
+                'Open(1)-D1: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
+                'Close(1)-D1: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' +
+                'Driftline_D1: '+ FloatToStrF( gDriftline_D1_val_1 , ffFixed , 6, 4 )   + ' / ' +
+                'BarWave_D1: '  + FloatToStrF( gBarWave_D1_val_1, ffNumber , 15 , 4 )
+                );
+
+
+        // Setup D1 Buy - RALLY
+        // -------------------------------------------
+
+        gSetup_D1_Rally_Buy   :=  (   // Recent bar body is above driftline of D1
+                                    (Open(1)    > gDriftline_D1_val_1)
+                                and (Close(1)   > gDriftline_D1_val_1)
+                                and (Open(1) <= Close(1) )
+                                and (gD1_DayName_Curr <> 'Sun')
+                                    // Recent bar is BLUE in Ver_3_20180126
+                                // and (gBarWave_D1_val_1 > gBarWave_D1_val_2)
+                            )
+                                // Monday Starting Trade ; Ver_3_20180126
+                                or
+                                (
+                                        (Open(2)    > gDriftline_D1_val_2)
+                                    and (Close(2)   > gDriftline_D1_val_2)
+                                    and (Open(2) <= Close(2) )
+                                    and (gD1_DayName_Curr = 'Mon')
+                                        // Recent bar wave is rising
+                                        // Friday bar is BLUE in Ver_3_20180126
+                                );
+
+
+
+        // Setup D1 Sell - RALLY
+        // -------------------------------------------
+
+
+        gSetup_D1_Rally_Sell  :=  (   // Recent bar body is below driftline of D1
+                                    (Open(1)    < gDriftline_D1_val_1)
+                                and (Close(1)   < gDriftline_D1_val_1)
+                                and (Open(1) >= Close(1) )
+                                and (gD1_DayName_Curr <> 'Sun')
+                                    // Recent bar is RED in Ver_3_20180126
+
+                            )
+                                // Monday Starting Trade ; Ver_3_20180126
+                                or
+                                (
+                                        (Open(2)    < gDriftline_D1_val_2)
+                                    and (Close(2)   < gDriftline_D1_val_2)
+                                    and (Open(2) >= Close(2) )
+                                    and (gD1_DayName_Curr = 'Mon')
+                                        // Recent bar wave is descending
+                                        // Recent bar is RED in Ver_3_20180126
+                                );
+
+
+        // Setup D1 Stay Away
+        // -------------------------------------------
+
+        gSetup_D1_StayAway := (
+                                    (not gSetup_D1_Rally_Buy)
+                                and (not gSetup_D1_Rally_Sell)
+                            );
+
+
+    end;
+
+
+            // SETUP D1 RALLY MONITORING
+            // -------------------------------------------------------------------------
+            // This is to monitor H1 Bar length
+
+            if gBarName_D1_FirstTick then
+            begin
+
+
+                Str( gSetup_D1_Rally_Buy , _text );
+                Print( 'gSetup_D1_Rally_Buy EXTR_RETR: ' + _text );
+
+                Str( gSetup_D1_Rally_Sell , _text );
+                Print( 'gSetup_D1_Rally_Sell EXTR_RETR: ' + _text );
+
+                Str( gSetup_D1_StayAway , _text );
+                Print( 'gSetup_D1_StayAway EXTR_RETR: ' + _text );
+
+            end;
+
+
+
+    // SETUP H1 - RALLY
+    // ---------------------------------------------------------------------------------
+    // ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC
+
+
+    if gBarName_H1_FirstTick then
+    begin
+
+        { Left as placeholder }
+
+        SetCurrencyAndTimeframe( gCurrency , PERIOD_H1 );
+
+
+        gH1_Token_Trig_Rall_Extr_Main_Count := 0 ;
+        gH1_Token_Trig_Rall_Extr_Tand_Count := 0 ;
+        { one hour only one entry }
+
+
+        {
+        Need older logic: refer to
+        C:\Users\Hendy\OneDrive\Documents\@Docs\Business Project - MultiForexScale\PowerTool 6\PT6_FT3_v2_20180114\
+            Powertool6_v2_20180114.pas
+        }
+
+
+
+        gRSI7_H1_val_1      := GetIndicatorValue( gRSI7_H1_Handle , 1 , 0 ) ;
+        gRSI7_H1_val_2      := GetIndicatorValue( gRSI7_H1_Handle , 2 , 0 ) ;
+
+        Print(  '[ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC]: 1st Tick H1 ' +
+                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )           + ' / ' +
+                'Open(1)-H1: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )                   + ' / ' +
+                'Close(1)-H1: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )                  + ' / ' +
+                'RSI7-H1(1): '  + FloatToStrF( gRSI7_H1_val_1, ffNumber , 7 , 2 )    + ' / ' +
+                'RSI7-H1(2): '  + FloatToStrF( gRSI7_H1_val_2, ffNumber , 7 , 2 )
+                );
+
+
+        gH1_Setup_Rall_Extr_Buy := ( // First hour
+                            (
+                                    gSetup_D1_Rally_Buy
+                                and ( gRSI7_H1_val_1 < 30.0 )
+                            )
+                            or
+                            (       // Second hour ; in case cross down is happen later
+                                    gSetup_D1_Rally_Buy
+                                and ( gRSI7_H1_val_2 < 30.0 )
+                            )
+                    );
+
+        gH1_Setup_Rall_Extr_Sell := ( // First hour
+                            (
+                                    gSetup_D1_Rally_Sell
+                                and ( gRSI7_H1_val_1 > 70.0 )
+                            )
+                            or
+                            (       // Second hour ; in case cross down is happen later
+                                    gSetup_D1_Rally_Sell
+                                and ( gRSI7_H1_val_2 > 70.0 )
+                            )
+                    );
+
+
+        {
+        Every single hour, if the event is found oversold with D1 uptrend, this become buy setup.
+        likewise, if found overbought with D1 downtrend, this become sell setup.
+        BUT
+        within the same hour, when M5 makes momentum back into main trend, the setup cancels itself
+        for that hour, until the next hour, if H1 is in retracement zone again.
+        This way, cancelling the setup, means one signal per hour per retracement hour.
+        }
+
+    end;
+
+
+            // SETUP H1 MONITORING
+            // -------------------------------------------------------------------------
+            // This is to monitor H1 Bar length
+
+            if gBarName_H1_FirstTick then
+            begin
+
+                Print('*** gBarName_H1_FirstTick RALLY event found: ***');
+
+                Str( gSetup_D1_Rally_Buy , _text );
+                Print( 'gSetup_D1_Rally_Buy EXTR_RETR: ' + _text );
+                Str( gSetup_D1_Rally_Sell , _text );
+                Print( 'gSetup_D1_Rally_Sell EXTR_RETR: ' + _text );
+
+                if gH1_Setup_Rall_Extr_Buy then
+                begin
+                    Str( gH1_Setup_Rall_Extr_Buy , _text );
+                    Print('gH1_Setup_Rall_Extr_Buy: ' + _text );
+                end;
+
+                if gH1_Setup_Rall_Extr_Sell then
+                begin
+                    Str( gH1_Setup_Rall_Extr_Sell , _text );
+                    Print('gH1_Setup_Rall_Extr_Sell: ' + _text );
+                end;
+
+            end;
+
+
+
+
+
+
+
+
+    // Return the timeframe back to M5
+    SetCurrencyAndTimeframe( gCurrency , PERIOD_M5 );
+
+    // TRIGGER M5 - RALLY
+    // ---------------------------------------------------------------------------------
+    // ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC
+
+
+    if gBarName_M5_FirstTick then
+    begin
+
+
+
+        // RSI3 MOMEN_UP / MOMEN_DOWN
+        // -------------------------------------------
+
+        { gRSI3_M5_val_1      := GetIndicatorValue( gRSI3_M5_Handle , 1 , 0 ); }
+        { gRSI3_M5_val_2      := GetIndicatorValue( gRSI3_M5_Handle , 2 , 0 ); }
+
+
+        { gRSI3_M5_MomentumEvent := MOMEN_NEUTRAL; }
+        { if ( (gRSI3_M5_val_1 > 70.0) and (gRSI3_M5_val_2 <= 70.0) ) then }
+            { gRSI3_M5_MomentumEvent := MOMEN_UP }
+        { else if ( (gRSI3_M5_val_1 < 30.0) and (gRSI3_M5_val_2 >= 30.0) ) then }
+            { gRSI3_M5_MomentumEvent := MOMEN_DOWN; }
+
+
+        { gMACDH_M5_val_1     := GetIndicatorValue( gMACDH_M5_Handle, 1 , 4 ); }
+        { gMACDH_M5_val_2     := GetIndicatorValue( gMACDH_M5_Handle, 2 , 4 ); }
+        { gMACDH_M5_val_3     := GetIndicatorValue( gMACDH_M5_Handle, 3 , 4 ); }
+
+
+
+        gBollingerM5_val_1_TopBand :=  GetIndicatorValue( gBollingerM5_Handle , 1 , 0 );
+        gBollingerM5_val_1_MidBand :=  GetIndicatorValue( gBollingerM5_Handle , 1 , 1 );
+        gBollingerM5_val_1_BotBand :=  GetIndicatorValue( gBollingerM5_Handle , 1 , 2 );
+
+        gBollingerM5_val_2_TopBand :=  GetIndicatorValue( gBollingerM5_Handle , 2 , 0 );
+        gBollingerM5_val_2_MidBand :=  GetIndicatorValue( gBollingerM5_Handle , 2 , 1 );
+        gBollingerM5_val_2_BotBand :=  GetIndicatorValue( gBollingerM5_Handle , 2 , 2 );
+
+        gBollingerM5_val_3_TopBand :=  GetIndicatorValue( gBollingerM5_Handle , 3 , 0 );
+        gBollingerM5_val_3_MidBand :=  GetIndicatorValue( gBollingerM5_Handle , 3 , 1 );
+        gBollingerM5_val_3_BotBand :=  GetIndicatorValue( gBollingerM5_Handle , 3 , 2 );
+
+
+        // Regression Line
+        gM5_RL_10_val_1     :=  GetIndicatorValue( gM5_RL_10_Handle , 1 , 0 );
+        gM5_RL_10_val_2     :=  GetIndicatorValue( gM5_RL_10_Handle , 2 , 0 );
+
+        gM5_RL_30_val_1     :=  GetIndicatorValue( gM5_RL_30_Handle , 1 , 0 );
+        gM5_RL_30_val_2     :=  GetIndicatorValue( gM5_RL_30_Handle , 2 , 0 );
+
+
+        // Moving Average
+        gM5_EMA_5_val_1     :=  GetIndicatorValue( gM5_EMA_5_Handle , 1 , 0 );
+        gM5_EMA_5_val_2     :=  GetIndicatorValue( gM5_EMA_5_Handle , 2 , 0 );
+
+        gM5_EMA_20_val_1     :=  GetIndicatorValue( gM5_EMA_20_Handle , 1 , 0 );
+        gM5_EMA_20_val_2     :=  GetIndicatorValue( gM5_EMA_20_Handle , 2 , 0 );
+
+
+
+        // Overbought and oversold rule
+        // -------------------------------------------
+
+        if not gM5_Setup_BollBand_Overbought then
+        begin
+            gM5_Setup_BollBand_Overbought := (
+                                    gM5_RL_10_val_1 > gBollingerM5_val_1_TopBand
+                        );
+            // the Overbought will stay true until there is trigger for EMA
+            // or until the next day
+            // the flow skips this chunk when the overbought is true
+        end;
+
+        if not gM5_Setup_BollBand_Oversold then
+        begin
+            gM5_Setup_BollBand_Oversold := (
+                                    gM5_RL_10_val_1 < gBollingerM5_val_1_BotBand
+                        );
+            // the oversold will stay true until there is trigger for EMA
+            // or until the next day
+            // the flow skips this chunk when the oversold is true
+        end;
+
+        
+        { if (gH1_Setup_Rall_Extr_Buy or gH1_Setup_Rall_Extr_Sell) then }
+        { begin }
+
+            { Print(  '[ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC]: 1st Tick M5 ' + }
+                    { 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )           + ' / ' + }
+                    { 'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )                   + ' / ' + }
+                    { 'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )                   }
+                    { ); }
+
+            { Print(  '[ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC]: 1st Tick M5 ' + }
+                    { 'gM5_RL_10_val_1: '     + FloatToStrF( gM5_RL_10_val_1 , ffFixed , 12 , 4 )    + ' / ' + }
+                    { 'gM5_RL_30_val_1: '     + FloatToStrF( gM5_RL_30_val_1 , ffFixed , 12 , 4 )    + ' / ' + }
+                    { 'gM5_RL_10_val_2: '     + FloatToStrF( gM5_RL_10_val_2 , ffFixed , 12 , 4 )    + ' / ' + }
+                    { 'gM5_RL_30_val_2: '     + FloatToStrF( gM5_RL_30_val_2 , ffFixed , 12 , 4 ) }
+                  { ); }
+
+                    
+            { Print(  'gDay_Token_Trig_Rall_Extr_Main_Count: ' +  IntToStr( gDay_Token_Trig_Rall_Extr_Main_Count ) + ' / ' + }
+                    { 'gH1_Token_Trig_Rall_Extr_Main_Count: ' + IntToStr(gH1_Token_Trig_Rall_Extr_Main_Count) }
+                    { ); }
+
+            { Print(  '[ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC]: 1st Tick M5 ' + }
+                    { 'gM5_EMA_5_val_1: '     + FloatToStrF( gM5_EMA_5_val_1 , ffFixed , 9, 4 )    + ' / ' + }
+                    { 'gM5_EMA_20_val_1: '    + FloatToStrF( gM5_EMA_20_val_1, ffFixed , 9, 4 ) }
+                    { ); }
+        { end; }
+
+
+
+        { if (gH1_Setup_Rall_Extr_Buy or gH1_Setup_Rall_Extr_Sell) then }
+        { begin }
+            { if ( gM5_RL_10_val_1 > gM5_RL_30_val_1 ) then gM5_RL10_RL30_Posi_Curr := 'ABOVE'; }
+            { if ( gM5_RL_10_val_1 < gM5_RL_30_val_1 ) then gM5_RL10_RL30_Posi_Curr := 'BELOW'; }
+        { end; }
+
+        
+        if (gH1_Setup_Rall_Extr_Buy or gH1_Setup_Rall_Extr_Sell) then
+        begin
+            if    ( gM5_RL_10_val_1 > gM5_RL_30_val_1 ) then gM5_RL10_RL30_Posi_Curr := 'ABOVE';
+            if    ( gM5_RL_10_val_1 < gM5_RL_30_val_1 ) then gM5_RL10_RL30_Posi_Curr := 'BELOW';
+            Print( 'CURR: ---' + gM5_RL10_RL30_Posi_Curr + '--- ' + 'PREV: ---' + gM5_RL10_RL30_Posi_Prev + '---' ) ;
+        end;
+
+        // Main signal
+        gTrigger_M5_Buy_Rall_Extr_retrac :=   (       // Main signal
+                                    gH1_Setup_Rall_Extr_Buy
+                                { and ( gM5_RL_10_val_1 >  gM5_RL_30_val_1 ) }
+                                { and ( gM5_RL_10_val_2 <= gM5_RL_30_val_2 ) }
+                                and ( gM5_RL10_RL30_Posi_Curr = 'ABOVE' )
+                                and ( gM5_RL10_RL30_Posi_Prev = 'BELOW' )
+                                and ( gDay_Token_Trig_Rall_Extr_Main_Count < 2 )        // two main triggers per day
+                                and (  gH1_Token_Trig_Rall_Extr_Main_Count < 1 )        // one trigger per hour
+                        );
+
+
+        // Tandem signal
+        gTrigger_M5_Buy_Rall_Extr_retrac :=   
+                        gTrigger_M5_Buy_Rall_Extr_retrac        // From Signal Main, so that Signal Main does not cancel
+                            or
+                            (       // Tandem signal
+                                        gH1_Setup_Rall_Extr_Buy
+                                    and gM5_Setup_BollBand_Oversold
+                                    and ( gM5_EMA_5_val_1  >  gM5_EMA_20_val_1 )
+                                    and ( gM5_EMA_5_val_2  <= gM5_EMA_20_val_2 )
+                                    and ( gDay_Token_Trig_Rall_Extr_Tand_Count < 2 )        // three triggers per day
+                                    and (  gH1_Token_Trig_Rall_Extr_Tand_Count < 1 )        // one trigger per hour
+                            );
+
+
+                // Tag the signal if comeing from tandem trigger
+                // the tag will be used to cancel oversold setup M5
+                _mov_avg_signal := ( gTrigger_M5_Buy_Rall_Extr_retrac
+                                and ( gM5_EMA_5_val_1 >  gM5_EMA_20_val_1 )
+                                and ( gM5_EMA_5_val_2 <= gM5_EMA_20_val_2 )
+                        );
+
+
+        // Main signal
+        gTrigger_M5_Sell_Rall_Extr_retrac :=   (      // Main signal
+                                    gH1_Setup_Rall_Extr_Sell
+                                and ( gM5_RL10_RL30_Posi_Curr = 'BELOW' )
+                                and ( gM5_RL10_RL30_Posi_Prev = 'ABOVE' )
+                                { and ( gM5_RL_10_val_1 <  gM5_RL_30_val_1 ) }
+                                { and ( gM5_RL_10_val_2 >= gM5_RL_30_val_2 ) }
+                                { and ( gDay_Token_Trig_Rall_Extr_Main_Count < 2 )        // two triggers per day }
+                                { and ( gH1_Token_Trig_Rall_Extr_Main_Count < 1 )         // one trigger per hour }
+                        );
+                        
+        // Tandem signal
+        gTrigger_M5_Sell_Rall_Extr_retrac :=   
+                        gTrigger_M5_Sell_Rall_Extr_retrac       // From Signal Main, so that Signal Main does not cancel
+                            or
+                            (       // Tandem signal
+                                        gH1_Setup_Rall_Extr_Sell
+                                    and gM5_Setup_BollBand_Overbought
+                                    and ( gM5_EMA_5_val_1 <  gM5_EMA_20_val_1 )
+                                    and ( gM5_EMA_5_val_2 >= gM5_EMA_20_val_2 )
+                                    and ( gDay_Token_Trig_Rall_Extr_Tand_Count < 2 )        // two triggers per day
+                                    and ( gH1_Token_Trig_Rall_Extr_Tand_Count < 1 )         // one trigger per hour
+                            );
+
+                // Tag the signal if comeing from tandem trigger
+                // the tag will be used to cancel overbought setup M5
+                _mov_avg_signal := ( gTrigger_M5_Sell_Rall_Extr_retrac
+                                and ( gM5_EMA_5_val_1 <  gM5_EMA_20_val_1 )
+                                and ( gM5_EMA_5_val_2 >= gM5_EMA_20_val_2 )
+                        );
+
+
+        // Cancel daily setups for this trigger
+        // -------------------------------------------
+
+        if gTrigger_M5_Buy_Rall_Extr_retrac then
+        begin
+            //  Increase daily token signal
+            if _mov_avg_signal then
+            begin
+                // After tandem Moving Average signal, cancel the oversold
+                gM5_Setup_BollBand_Oversold := false ;
+                // Increase hourly token
+                Inc(gH1_Token_Trig_Rall_Extr_Tand_Count);
+                // Increase daily token
+                Inc(gDay_Token_Trig_Rall_Extr_Tand_Count);
+            end
+            else
+            begin
+                // Increase hourly token
+                Inc(gH1_Token_Trig_Rall_Extr_Main_Count);
+                // Increase daily token
+                Inc(gDay_Token_Trig_Rall_Extr_Main_Count);
+            end;
+        end;
+
+        if gTrigger_M5_Sell_Rall_Extr_retrac then
+        begin
+            //  Increase daily token signal
+            if _mov_avg_signal then
+            begin
+                // After tandem Moving Average signal, cancel the oversold
+                gM5_Setup_BollBand_Overbought := false ;
+                // Increase hourly token
+                Inc(  gH1_Token_Trig_Rall_Extr_Tand_Count );
+                // Increase daily token
+                Inc( gDay_Token_Trig_Rall_Extr_Tand_Count );
+            end
+            else
+            begin
+                // Increase hourly token
+                Inc(  gH1_Token_Trig_Rall_Extr_Main_Count );
+                // Increase daily token
+                Inc( gDay_Token_Trig_Rall_Extr_Main_Count );
+            end;
+        end;
+
+
+
+        {**********  ADD PRINTS FOR trigger settings ***********}
+
+                if gTrigger_M5_Buy_Rall_Extr_retrac then
+                begin
+                    Str( gTrigger_M5_Buy_Rall_Extr_retrac , _text );
+                    Print('gTrigger_M5_Buy_Rall_Extr_retrac: ' + _text );
+                end;
+
+                if gTrigger_M5_Sell_Rall_Extr_retrac then
+                begin
+                    Str( gTrigger_M5_Sell_Rall_Extr_retrac , _text );
+                    Print('gTrigger_M5_Sell_Rall_Extr_retrac: ' + _text );
+                end;
+
+
+        // Assign Curr variable for Prev variable
+        // -------------------------------------------
+
+        gM5_RL10_RL30_Posi_Prev := gM5_RL10_RL30_Posi_Curr ;
+
+    end;
+
+
+
+
+    // MARKING THE CHART WITH TRIGGER M5 - RALLY
+    // ---------------------------------------------------------------------------------
+    // ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC
+
+    if gTrigger_M5_Buy_Rall_Extr_retrac then
+    begin
+
+        SetCurrencyAndTimeframe( gCurrency , PERIOD_M5 );
+
+        Print(  '[ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC]: 1st Tick M5 BUY ' +
+                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
+                'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
+                'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )
+                //'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 )
+                );
+
+        gTextName := 'TGR_RALL_EXTR_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
+        if not(ObjectExists( gTextName )) then
+        begin
+            ObjectCreate( gTextName, obj_Text, 0, TimeCurrent, (Bid+Ask)/2 );
+            ObjectSetText(gTextName, 'O', 16, 'Consolas', clBlue);  // Possible placement for PowerTool trade long
+            ObjectSet(gTextName, OBJPROP_VALIGNMENT, tlCenter);     // StrategyInterfaceUnit
+            ObjectSet(gTextName, OBJPROP_HALIGNMENT, taCenter );    // StrategyInterfaceUnit
+        end;
+
+    end
+    else if gTrigger_M5_Sell_Rall_Extr_retrac then
+    begin
+
+        Print(  '[ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC]: 1st Tick M5 SELL ' +
+                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
+                'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
+                'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )
+                //'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 )
+                );
+
+        gTextName := 'TGR_RALL_EXTR_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
+        if not(ObjectExists( gTextName )) then
+        begin
+            ObjectCreate( gTextName, obj_Text, 0, TimeCurrent, (Bid+Ask)/2 );
+            ObjectSetText(gTextName, 'O', 16, 'Consolas', clRed);  // Possible placement for PowerTool trade long
+            ObjectSet(gTextName, OBJPROP_VALIGNMENT, tlCenter);     // StrategyInterfaceUnit
+            ObjectSet(gTextName, OBJPROP_HALIGNMENT, taCenter );    // StrategyInterfaceUnit
+        end;
+    end;
+
+    {===================================================================================================}
+    {  COUNT EXISTING POSITION/S, ENTER INTO THE MARKET }
+    {  Open new Position when there is none, and add more if previous one in profit  }
+    {  Disable entry after large profit registers in the system  }
+    {  Disable entry in the same day after NEntry attempts }
+    {===================================================================================================}
+    { for every requirement, there are two variables at minimum to support requirement }
+
+
+end;        // ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC
+
+
 
 
 procedure ENTRY_MANAGEMENT_JAGGY ; stdcall ;
@@ -1323,7 +1993,7 @@ begin
                             );
 
 
-        gTrigger_M5_Sell_Market_Jaggy  := ( gSetup_H1_Jaggy_Sell 
+        gTrigger_M5_Sell_Market_Jaggy  := ( gSetup_H1_Jaggy_Sell
                                 and ( (gRSI3_M5_val_1 < 50.0) and ( gRSI3_M5_val_2 >= 50.0 ) )
                                 and (gDailyToken_Seq_1_rule_2 or gDailyToken_Seq_2_rule_2 )
                             );
@@ -1361,7 +2031,7 @@ begin
 
 
 
-    // MARKING THE CHART WITH TRIGGER M5 - JAGGY 
+    // MARKING THE CHART WITH TRIGGER M5 - JAGGY
     // ---------------------------------------------------------------------------------
 
     if gTrigger_M5_Buy_Market_Jaggy then
@@ -1502,7 +2172,7 @@ begin
                                 and (Close(1)   < gDriftline_D1_val_1)
                                 and (Close(1)  <= Open(1) )
                                     // Recent bar wave is descending
-                                    // Recent bar is RED 
+                                    // Recent bar is RED
                                     // Needs pairing with Hourly H1 bounce down
                             );
 
@@ -1550,7 +2220,7 @@ begin
 
 
         SetCurrencyAndTimeframe( gCurrency , PERIOD_H1 );
-        
+
         gRSI7_H1_val_1      := GetIndicatorValue( gRSI7_H1_Handle , 1 , 0 ) ;
         gRSI7_H1_val_2      := GetIndicatorValue( gRSI7_H1_Handle , 2 , 0 ) ;
 
@@ -1574,14 +2244,14 @@ begin
                 );
 
         gSetup_H1_FlipFlop_Buy  := (
-                                    gSetup_D1_FlipFlop_Buy 
+                                    gSetup_D1_FlipFlop_Buy
                                 and ( gRSI7_H1_val_1 >  40 )
                                 and ( gRSI7_H1_val_2 <= 40 )
             );
 
 
         gSetup_H1_FlipFlop_Sell   := (
-                                    gSetup_D1_FlipFlop_Sell 
+                                    gSetup_D1_FlipFlop_Sell
                                 and ( gRSI7_H1_val_1 < 60 )
                                 and ( gRSI7_H1_val_2 >= 60 )
             );
@@ -1655,7 +2325,7 @@ begin
                             );
 
 
-        gTrigger_M5_Sell_Market_FlipFlop  := ( gSetup_H1_FlipFlop_Sell 
+        gTrigger_M5_Sell_Market_FlipFlop  := ( gSetup_H1_FlipFlop_Sell
                                 and ( (gRSI3_M5_val_1 < 50.0) and ( gRSI3_M5_val_2 >= 50.0 ) )
                                 and (gDailyToken_Seq_1_rule_3 or gDailyToken_Seq_2_rule_3 )
                             );
@@ -1693,7 +2363,7 @@ begin
 
 
 
-    // MARKING THE CHART WITH TRIGGER M5 - FLIPFLOP 
+    // MARKING THE CHART WITH TRIGGER M5 - FLIPFLOP
     // ---------------------------------------------------------------------------------
 
     if gTrigger_M5_Buy_Market_FlipFlop then
@@ -1873,7 +2543,7 @@ end;
 procedure InitStrategy; stdcall;
 begin
 
-  StrategyShortName('Powertool601');
+  StrategyShortName('Powertool6X');
   StrategyDescription('Strategy Swing based on Triple Time Frame');
 
 
@@ -2011,12 +2681,45 @@ begin
                     ,       'MACDHistogramX100'
                     ,       '12;26;9;(High + Low + Close)/3'
                 );
-                
-    gBollingerM5_Handle :=  CreateIndicator( 
+
+    gBollingerM5_Handle :=  CreateIndicator(
                             gCurrency
                     ,       PERIOD_M5
                     ,       'BollingerBands'
-                    ,       '30;1.00;0;Close;Simple (SMA)'    
+                    ,       '30;1.00;0;Close;Simple (SMA)'
+                );
+
+
+    gM5_RL_10_Handle    :=  CreateIndicator(
+                            gCurrency
+                    ,       PERIOD_M5
+                    ,       'LinearRegressionIndicator'
+                    ,       '10;0;Close'
+                );
+
+    gM5_RL_30_Handle    :=  CreateIndicator(
+                            gCurrency
+                    ,       PERIOD_M5
+                    ,       'LinearRegressionIndicator'
+                    ,       '30;0;Close'
+                );
+
+    gM5_EMA_5_Handle    :=  CreateIndicator(
+                            gCurrency
+                    ,       PERIOD_M5
+                    ,       'MovingAverage'
+                    ,       '5;0;0;Exponential (EMA);Close'
+                );
+
+    // Reference for MovingAverage :
+    // C:\Users\Hendy\OneDrive\Documents\@Docs\_HUB_FT\Strategies\@ Cores\Marker Alignment W1-D1\
+    // TechnicalFunctions.pas - line 196
+
+    gM5_EMA_20_Handle   :=  CreateIndicator(
+                            gCurrency
+                    ,       PERIOD_M5
+                    ,       'MovingAverage'
+                    ,       '20;0;0;Exponential (EMA);Close'
                 );
 
     gATR_M5_Handle :=       CreateIndicator(
@@ -2058,7 +2761,7 @@ begin
     // Print the version on Journal
     // ---------------------------------------------------------------------------------
     Print(
-        'Ver_3_20180126 + 2018.01.27 (0230) - Saturday'
+        'Ver_6X_20180325 Sun'
         );
 
 
@@ -2201,9 +2904,9 @@ begin
 
     ENTRY_MANAGEMENT_RALLY_STANDARD;
     ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC;
-    
-    ENTRY_MANAGEMENT_JAGGY;
-    ENTRY_MANAGEMENT_FLIPFLOP;
+
+    // ENTRY_MANAGEMENT_JAGGY;
+    // ENTRY_MANAGEMENT_FLIPFLOP;
 
     // if there is no order and fast SMA crosses slow SMA from top
       // then open SELL order
