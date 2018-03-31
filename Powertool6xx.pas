@@ -276,31 +276,29 @@ var
 
 
     {** Setup Rule Daily Token **}
-    // Added in Ver_3_20180126
 
-    { Rule 1 = Rally }
-    { Rule 2 = Jaggy }
-    { Rule 3 = Flip Flop }
-    { Rule 4 = All 3 above }
 
     // Token counter (new one)
+    
+    gDay_Token_Trig_Rall_Stan_Count         : integer   ;
+    
     gDay_Token_Trig_Rall_Extr_All__Count    : integer   ;
     gDay_Token_Trig_Rall_Extr_Main_Count    : integer   ;
     gDay_Token_Trig_Rall_Extr_Tand_Count    : integer   ;
-    
-    
+
+
     gDay_Token_Trig_Jaggy_All_Count         : integer   ;
 
 
-    gDailyToken_Seq_1_rule_1    : boolean               ;
-    gDailyToken_Seq_2_rule_1    : boolean               ;
+    { gDailyToken_Seq_1_rule_1    : boolean               ; }
+    { gDailyToken_Seq_2_rule_1    : boolean               ; }
+    
     gD1_RecentClose             : double                ;
 
     // Ver_3_20180126
     // For D1 red bars in uptrend and D1 blue bars in downtrend
     gDailyToken_Seq_1_rule_2    : boolean               ;
     gDailyToken_Seq_2_rule_2    : boolean               ;
-
     gDailyToken_Seq_1_rule_3    : boolean               ;
     gDailyToken_Seq_2_rule_3    : boolean               ;
 
@@ -332,13 +330,20 @@ var
 
 
     {** Hourly Token **}
-    // Token for trigger one entry per hour 
+    // Token for trigger one entry per hour
+    
+    gH1_Token_Trig_Rall_Stan_Count      : integer       ;
+    
     gH1_Token_Trig_Rall_Extr_Main_Count : integer       ;
     gH1_Token_Trig_Rall_Extr_Tand_Count : integer       ;
-    
+
     gH1_Token_Trig_Jaggy_Count  : integer               ;
 
     gH1_Token_Trigger           : boolean               ;       // Marked_for_deletion
+                                                                // Used by Rally Standard
+    // Used by Jaggy with H1 deep retracement
+    gH1_OverBought              : boolean               ;
+    gH1_OverSold                : boolean               ;
 
 
     {** Setup Rule in Bar Number **}
@@ -408,6 +413,7 @@ var
     gM5_RL_10_Handle            : integer               ;
     gM5_RL_10_val_1             : double                ;
     gM5_RL_10_val_2             : double                ;
+    gM5_RL_10_val_3             : double                ;
 
     gM5_RL_30_Handle            : integer               ;
     gM5_RL_30_val_1             : double                ;
@@ -611,8 +617,7 @@ begin
 
 
         // Set daily tokens true at opening bar
-        gDailyToken_Seq_1_rule_1   := true ;
-        gDailyToken_Seq_2_rule_1   := true ;
+        gDay_Token_Trig_Rall_Stan_Count := 0 ;
 
 
         // Recent closing price
@@ -708,15 +713,23 @@ begin
             if gBarName_D1_FirstTick then
             begin
 
-
-                Str( gSetup_D1_Rally_Buy , _text );
-                Print( 'gSetup_D1_Rally_Buy STANDARD: ' + _text );
-
-                Str( gSetup_D1_Rally_Sell , _text );
-                Print( 'gSetup_D1_Rally_Sell STANDARD: ' + _text );
-
-                Str( gSetup_D1_StayAway , _text );
-                Print( 'gSetup_D1_StayAway STANDARD: ' + _text );
+                if gSetup_D1_Rally_Buy then 
+                begin
+                    Str( gSetup_D1_Rally_Buy , _text );
+                    Print( 'gSetup_D1_Rally_Buy STANDARD: ' + _text );
+                end;
+                
+                if gSetup_D1_Rally_Sell then
+                begin
+                    Str( gSetup_D1_Rally_Sell , _text );
+                    Print( 'gSetup_D1_Rally_Sell STANDARD: ' + _text );
+                end;
+                
+                if gSetup_D1_StayAway then
+                begin
+                    Str( gSetup_D1_StayAway , _text );
+                    Print( 'gSetup_D1_StayAway STANDARD: ' + _text );
+                end;
 
             end;
 
@@ -733,8 +746,8 @@ begin
         { Left as placeholder }
 
         SetCurrencyAndTimeframe( gCurrency , PERIOD_H1 );
-
-        gH1_Token_Trigger   := false ;
+        
+        gH1_Token_Trig_Rall_Stan_Count := 0 ;
         { one hour only one entry }
 
 
@@ -808,36 +821,6 @@ begin
 
             );
 
-        { gSetup_H1_Buy_Opt_1 := ( }
-                                    { gSetup_D1_Buy_Bar_Red }
-                                { and ( Close(1) > gDriftline_H1_val_1 ) }
-                                { and ( Open(1)   > gDriftline_H1_val_1 ) }
-                                { and ( gDriftline_H1_val_1 > gDriftline_H1_val_2 ) }
-            { ); }
-        { gSetup_H1_Buy_Opt_2 := ( }
-                                    { gSetup_D1_Buy_Bar_Red }
-                                { and ( Close(1)  > gDriftline_H1_val_1 ) }
-                                { and ( Open(1)   > gDriftline_H1_val_1 ) }
-            { ); }
-
-        { gSetup_H1_Sell_Opt_1    := ( }
-                                    { gSetup_D1_Jaggy_Sell }
-                                { and ( Close(1)  < gDriftline_H1_val_1 ) }
-                                { and ( Open(1)   < gDriftline_H1_val_1 ) }
-                                { and ( gDriftline_H1_val_1 < gDriftline_H1_val_2 ) }
-
-        { gSetup_H1_Sell_Opt_2    := ( }
-                                    { gSetup_D1_Jaggy_Sell }
-                                { and ( Close(1)  < gDriftline_H1_val_1 ) }
-                                { and ( Open(1)   < gDriftline_H1_val_1 ) }
-            { ); }
-
-        {** Consolidate H1 Setup Rule options into one **}
-
-        { gSetup_H1_Buy_Curr      := ( gSetup_H1_Buy_Opt_1 { or  gSetup_H1_Buy_Opt_2 ); }
-        { gSetup_H1_Sell_Curr     := ( gSetup_H1_Sell_Opt_1 {or gSetup_H1_Sell_Opt_2 ); }
-
-
 
         {
         Every single hour, if the event is found oversold with D1 uptrend, this become buy setup.
@@ -858,12 +841,12 @@ begin
             if gBarName_H1_FirstTick then
             begin
 
-                Print('*** gBarName_H1_FirstTick RALLY event found: ***');
+                { Print('*** gBarName_H1_FirstTick RALLY event found: ***'); }
 
-                Str( gSetup_D1_Rally_Buy , _text );
-                Print( 'gSetup_D1_Rally_Buy STANDARD: ' + _text );
-                Str( gSetup_D1_Rally_Sell , _text );
-                Print( 'gSetup_D1_Rally_Sell STANDARD: ' + _text );
+                { Str( gSetup_D1_Rally_Buy , _text ); }
+                { Print( 'gSetup_D1_Rally_Buy STANDARD: ' + _text ); }
+                { Str( gSetup_D1_Rally_Sell , _text ); }
+                { Print( 'gSetup_D1_Rally_Sell STANDARD: ' + _text ); }
 
                 if gSetup_H1_Rally_Buy then
                 begin
@@ -954,6 +937,33 @@ begin
         gM5_RL_30_val_1     :=  GetIndicatorValue( gM5_RL_30_Handle , 1 , 0 );
         gM5_RL_30_val_2     :=  GetIndicatorValue( gM5_RL_30_Handle , 2 , 0 );
 
+        
+        
+        gTrigger_M5_Buy_Rally_Standard  := (
+                                    gSetup_D1_Rally_Buy       // Ver_3_20180126
+                            and     gOversold_M5
+                            and     ( Close(2) < gBollingerM5_val_2_BotBand )
+                            and     ( Close(2) < gD1_RecentClose )      // Find the tips
+                            and ( gM5_RL_10_val_1 >  gM5_RL_30_val_1 )
+                            and ( gM5_RL_10_val_2 <= gM5_RL_30_val_2 )
+                                and (gDay_Token_Trig_Rall_Stan_Count < 2)    // two triggers per day
+                                and ( gH1_Token_Trig_Rall_Stan_Count < 1 )           // one trigger per hour
+                            );
+
+        gTrigger_M5_Sell_Rally_Standard :=  (
+                                    gSetup_D1_Rally_Sell
+                            and     gOverbought_M5
+                            and     ( Close(2) > gBollingerM5_val_2_TopBand )
+                            and     ( Close(2) > gD1_RecentClose )      // Find the antenna
+                            and ( gM5_RL_10_val_1 <  gM5_RL_30_val_1 )
+                            and ( gM5_RL_10_val_2 >= gM5_RL_30_val_2 )
+                                and (gDay_Token_Trig_Rall_Stan_Count < 2)    // two triggers per day
+                                and ( gH1_Token_Trig_Rall_Stan_Count < 1 )               // one trigger per hour
+                            );                            
+                            
+                            
+        
+        
         {
         The momentum event happens *ONLY* at first tick of M5 bar!
         }
@@ -1001,28 +1011,31 @@ begin
                                 { and ( gH1_Token_Trigger = false )               // one trigger per hour }
                             { ); }
 
-        gTrigger_M5_Buy_Rally_Standard  := (
-                                    gSetup_D1_Rally_Buy       // Ver_3_20180126
-                            and     gOversold_M5
-                            and     ( Close(2) < gBollingerM5_val_2_BotBand )
-                            and     ( Close(2) < gD1_RecentClose )      // Find the tips                            
-                            and ( gM5_RL_10_val_1 >  gM5_RL_30_val_1 )
-                            and ( gM5_RL_10_val_2 <= gM5_RL_30_val_2 )
-                                and (gDailyToken_Seq_1_rule_1 or gDailyToken_Seq_2_rule_1)    // two triggers per day
-                                and ( gH1_Token_Trigger = false )           // one trigger per hour
-                            );
 
-        gTrigger_M5_Sell_Rally_Standard :=  (
-                                    gSetup_D1_Rally_Sell
-                            and     gOverbought_M5
-                            and     ( Close(2) > gBollingerM5_val_2_TopBand )
-                            and     ( Close(2) > gD1_RecentClose )      // Find the antenna
-                            and ( gM5_RL_10_val_1 <  gM5_RL_30_val_1 )
-                            and ( gM5_RL_10_val_2 >= gM5_RL_30_val_2 )                            
-                                and (gDailyToken_Seq_1_rule_1 or gDailyToken_Seq_2_rule_1)    // two triggers per day
-                                and ( gH1_Token_Trigger = false )               // one trigger per hour
-                            );
+                             
                             
+        { gTrigger_M5_Buy_Rally_Standard  := ( }
+                                    { gSetup_D1_Rally_Buy       // Ver_3_20180126 }
+                            { and     gOversold_M5 }
+                            { and     ( Close(2) < gBollingerM5_val_2_BotBand ) }
+                            { and     ( Close(2) < gD1_RecentClose )      // Find the tips }
+                            { and ( gM5_RL_10_val_1 >  gM5_RL_30_val_1 ) }
+                            { and ( gM5_RL_10_val_2 <= gM5_RL_30_val_2 ) }
+                                { and (gDailyToken_Seq_1_rule_1 or gDailyToken_Seq_2_rule_1)    // two triggers per day }
+                                { and ( gH1_Token_Trigger = false )           // one trigger per hour }
+                            { ); }
+
+        { gTrigger_M5_Sell_Rally_Standard :=  ( }
+                                    { gSetup_D1_Rally_Sell }
+                            { and     gOverbought_M5 }
+                            { and     ( Close(2) > gBollingerM5_val_2_TopBand ) }
+                            { and     ( Close(2) > gD1_RecentClose )      // Find the antenna }
+                            { and ( gM5_RL_10_val_1 <  gM5_RL_30_val_1 ) }
+                            { and ( gM5_RL_10_val_2 >= gM5_RL_30_val_2 ) }
+                                { and (gDailyToken_Seq_1_rule_1 or gDailyToken_Seq_2_rule_1)    // two triggers per day }
+                                { and ( gH1_Token_Trigger = false )               // one trigger per hour }
+                            { ); }
+
         { gTrigger_M5_Buy_Rally_Standard    := (   }
                                 { gSetup_H1_Rally_Buy }
                             { and ( gRSI3_M5_val_1 > 50.0 ) }
@@ -1062,34 +1075,28 @@ begin
         if gTrigger_M5_Buy_Rally_Standard then
         begin
 
-            // After one trigger, cancel hourly token
-            gH1_Token_Trigger := true ;
-
+            // Increase hourly token
+            Inc( gH1_Token_Trig_Rall_Stan_Count );
+            
+            // Increase daily token
+            Inc( gDay_Token_Trig_Rall_Stan_Count );
+            
             // After one trigger, cancel the gOversold_M5
             gOversold_M5    := false ;
-
-            // Cancel sequentially, to allow two signals per day
-            if gDailyToken_Seq_1_rule_1 then
-                gDailyToken_Seq_1_rule_1 := false
-            else if gDailyToken_Seq_2_rule_1 then
-                gDailyToken_Seq_2_rule_1 := false ;
 
         end;
 
         if gTrigger_M5_Sell_Rally_Standard then
         begin
 
-            // After one trigger, cancel hourly token
-            gH1_Token_Trigger := true ;
-
+            // Increase hourly token
+            Inc( gH1_Token_Trig_Rall_Stan_Count );
+            
+            // Increase daily token
+            Inc( gDay_Token_Trig_Rall_Stan_Count );
+            
             // After one trigger, cancel gOverbought_M5
-            gOverbought_M5 := false ;
-
-            // Cancel sequentially, to allow two signals per day
-            if gDailyToken_Seq_1_rule_1 then
-                gDailyToken_Seq_1_rule_1 := false
-            else if gDailyToken_Seq_2_rule_1 then
-                gDailyToken_Seq_2_rule_1 := false ;
+            gOverbought_M5 := false ;            
 
         end;
 
@@ -1130,7 +1137,7 @@ begin
                 //'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 )
                 );
 
-        gTextName := 'TGR_RALL_STAN_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
+        gTextName := 'TGR_RALLSTAN_B_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
         if ObjectExists( gTextName ) then ObjectDelete( gTextName );
         if not(ObjectExists( gTextName )) then
         begin
@@ -1151,7 +1158,7 @@ begin
                 //'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 )
                 );
 
-        gTextName := 'TGR_RALL_STAN_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
+        gTextName := 'TGR_RALLSTAN_S_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
         if ObjectExists( gTextName ) then ObjectDelete( gTextName );
         if not(ObjectExists( gTextName )) then
         begin
@@ -1179,8 +1186,11 @@ end;
 procedure ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC ; stdcall ;
 var
         _text               :   string      ;
-        _signal_EMA     :   boolean     ;
-        _signal_RegLin      :   boolean     ;
+        _signal_EMA_Buy     :   boolean     ;
+        _signal_RegLin_Buy  :   boolean     ;
+        _signal_EMA_Sell    :   boolean     ;
+        _signal_RegLin_Sell :   boolean     ;
+
 begin
 
     if (gMarketMode <> RALLY) and (gMarketMode <> CANTTELL_RALLY_OR_JAGGY) then exit ;
@@ -1314,15 +1324,23 @@ begin
             if gBarName_D1_FirstTick then
             begin
 
+                if gSetup_D1_Rally_Buy then 
+                begin
+                    Str( gSetup_D1_Rally_Buy , _text );
+                    Print( 'gSetup_D1_Rally_Buy EXTR_RETR: ' + _text );
+                end;
 
-                Str( gSetup_D1_Rally_Buy , _text );
-                Print( 'gSetup_D1_Rally_Buy EXTR_RETR: ' + _text );
+                if gSetup_D1_Rally_Sell then 
+                begin
+                    Str( gSetup_D1_Rally_Sell , _text );
+                    Print( 'gSetup_D1_Rally_Sell EXTR_RETR: ' + _text );
+                end;
 
-                Str( gSetup_D1_Rally_Sell , _text );
-                Print( 'gSetup_D1_Rally_Sell EXTR_RETR: ' + _text );
-
-                Str( gSetup_D1_StayAway , _text );
-                Print( 'gSetup_D1_StayAway EXTR_RETR: ' + _text );
+                if gSetup_D1_StayAway then
+                begin
+                    Str( gSetup_D1_StayAway , _text );
+                    Print( 'gSetup_D1_StayAway EXTR_RETR: ' + _text );
+                end;
 
             end;
 
@@ -1496,13 +1514,16 @@ begin
         gM5_EMA_5_val_1     :=  GetIndicatorValue( gM5_EMA_5_Handle , 1 , 0 );
         gM5_EMA_5_val_2     :=  GetIndicatorValue( gM5_EMA_5_Handle , 2 , 0 );
 
-        gM5_EMA_20_val_1     :=  GetIndicatorValue( gM5_EMA_20_Handle , 1 , 0 );
-        gM5_EMA_20_val_2     :=  GetIndicatorValue( gM5_EMA_20_Handle , 2 , 0 );
+        gM5_EMA_20_val_1    :=  GetIndicatorValue( gM5_EMA_20_Handle , 1 , 0 );
+        gM5_EMA_20_val_2    :=  GetIndicatorValue( gM5_EMA_20_Handle , 2 , 0 );
 
 
-        
-        _signal_RegLin  := false ;
-        _signal_EMA     := false ;
+
+        _signal_RegLin_Buy  := false ;
+        _signal_EMA_Buy     := false ;
+        _signal_RegLin_Sell := false ;
+        _signal_EMA_Sell    := false ;
+
         
 
         // Overbought and oversold rule
@@ -1528,7 +1549,7 @@ begin
             // the flow skips this chunk when the oversold is true
         end;
 
-        
+
         { if (gH1_Setup_Rall_Extr_Buy or gH1_Setup_Rall_Extr_Sell) then }
         { begin }
 
@@ -1545,7 +1566,7 @@ begin
                     { 'gM5_RL_30_val_2: '     + FloatToStrF( gM5_RL_30_val_2 , ffFixed , 12 , 4 ) }
                   { ); }
 
-                    
+
             { Print(  'gDay_Token_Trig_Rall_Extr_Main_Count: ' +  IntToStr( gDay_Token_Trig_Rall_Extr_Main_Count ) + ' / ' + }
                     { 'gH1_Token_Trig_Rall_Extr_Main_Count: ' + IntToStr(gH1_Token_Trig_Rall_Extr_Main_Count) }
                     { ); }
@@ -1564,7 +1585,7 @@ begin
             { if ( gM5_RL_10_val_1 < gM5_RL_30_val_1 ) then gM5_RL10_RL30_Posi_Curr := 'BELOW'; }
         { end; }
 
-        
+
         if (gH1_Setup_Rall_Extr_Buy or gH1_Setup_Rall_Extr_Sell) then
         begin
             if    ( gM5_RL_10_val_1 > gM5_RL_30_val_1 ) then gM5_RL10_RL30_Posi_Curr := 'ABOVE';
@@ -1583,20 +1604,20 @@ begin
                                 and (  gH1_Token_Trig_Rall_Extr_Main_Count < 1 )        // one trigger per hour
                                 and ( gDay_Token_Trig_Rall_Extr_All__Count < 4 )        // max all 4 triggers per day
                         );
-                        
+
                 // Tag the signal if coming from regression line trigger
                 // The tag will be used for marker
-                _signal_RegLin := ( gTrigger_M5_Buy_Rall_Extr_retrac
+                _signal_RegLin_Buy := ( gTrigger_M5_Buy_Rall_Extr_retrac
                                 and ( gM5_RL10_RL30_Posi_Curr = 'ABOVE' )
                                 and ( gM5_RL10_RL30_Posi_Prev = 'BELOW' )
                         );
-                        
-                        
-                        
-                        
+
+
+
+
 
         // Tandem signal buy
-        gTrigger_M5_Buy_Rall_Extr_retrac :=   
+        gTrigger_M5_Buy_Rall_Extr_retrac :=
                         gTrigger_M5_Buy_Rall_Extr_retrac        // From Signal Main, so that Signal Main does not cancel
                             or
                             (       // Tandem signal
@@ -1611,13 +1632,13 @@ begin
 
                 // Tag the signal if comeing from tandem trigger
                 // the tag will be used to cancel oversold setup M5
-                _signal_EMA := ( gTrigger_M5_Buy_Rall_Extr_retrac
+                _signal_EMA_Buy := ( gTrigger_M5_Buy_Rall_Extr_retrac
                                 and ( gM5_EMA_5_val_1 >  gM5_EMA_20_val_1 )
                                 and ( gM5_EMA_5_val_2 <= gM5_EMA_20_val_2 )
                         );
 
-                        
-                        
+
+
 
         // Main signal sell
         gTrigger_M5_Sell_Rall_Extr_retrac :=   (      // Main signal
@@ -1628,20 +1649,20 @@ begin
                                 { and ( gM5_RL_10_val_2 >= gM5_RL_30_val_2 ) }
                                 and ( gDay_Token_Trig_Rall_Extr_Main_Count < 2 )        // two triggers per day
                                 and ( gH1_Token_Trig_Rall_Extr_Main_Count < 1 )         // one trigger per hour
-                                and ( gDay_Token_Trig_Rall_Extr_All__Count < 4 )        // max all 4 triggers per day                                
+                                and ( gDay_Token_Trig_Rall_Extr_All__Count < 4 )        // max all 4 triggers per day
                         );
 
                 // Tag the signal if coming from regression line trigger
                 // The tag will be used for marker
-                _signal_RegLin := ( gTrigger_M5_Sell_Rall_Extr_retrac
+                _signal_RegLin_Sell := ( gTrigger_M5_Sell_Rall_Extr_retrac
                                 and ( gM5_RL10_RL30_Posi_Curr = 'BELOW' )
                                 and ( gM5_RL10_RL30_Posi_Prev = 'ABOVE' )
                         );
 
 
-                        
+
         // Tandem signal sell
-        gTrigger_M5_Sell_Rall_Extr_retrac :=   
+        gTrigger_M5_Sell_Rall_Extr_retrac :=
                         gTrigger_M5_Sell_Rall_Extr_retrac       // From Signal Main, so that Signal Main does not cancel
                             or
                             (       // Tandem signal
@@ -1652,12 +1673,12 @@ begin
                                     and ( gDay_Token_Trig_Rall_Extr_Tand_Count < 2 )        // two triggers per day
                                     and ( gH1_Token_Trig_Rall_Extr_Tand_Count < 1 )         // one trigger per hour
                                     and ( gDay_Token_Trig_Rall_Extr_All__Count < 4 )        // max all 4 triggers per day
-                                    
+
                             );
 
                 // Tag the signal if comeing from tandem trigger
                 // the tag will be used to cancel overbought setup M5
-                _signal_EMA := ( gTrigger_M5_Sell_Rall_Extr_retrac
+                _signal_EMA_Sell := ( gTrigger_M5_Sell_Rall_Extr_retrac
                                 and ( gM5_EMA_5_val_1 <  gM5_EMA_20_val_1 )
                                 and ( gM5_EMA_5_val_2 >= gM5_EMA_20_val_2 )
                         );
@@ -1669,7 +1690,7 @@ begin
         if gTrigger_M5_Buy_Rall_Extr_retrac then
         begin
             //  Increase daily token signal
-            if _signal_EMA then
+            if _signal_EMA_Buy then
             begin
                 // After tandem Moving Average signal, cancel the oversold
                 gM5_Setup_BollBand_Oversold := false ;
@@ -1693,11 +1714,11 @@ begin
 
         if gTrigger_M5_Sell_Rall_Extr_retrac then
         begin
-        
-            Print( '*** BEFORE gDay_Token_Trig_Rall_Extr_Tand_Count: ' + IntToStr(gDay_Token_Trig_Rall_Extr_Tand_Count) ) ; 
-        
+
+            { Print( '*** BEFORE gDay_Token_Trig_Rall_Extr_Tand_Count: ' + IntToStr(gDay_Token_Trig_Rall_Extr_Tand_Count) ) ; }
+
             //  Increase daily token signal
-            if _signal_EMA then
+            if _signal_EMA_Sell then
             begin
                 // After tandem Moving Average signal, cancel the oversold
                 gM5_Setup_BollBand_Overbought := false ;
@@ -1717,9 +1738,9 @@ begin
                 // Increase daily token for all trades
                 Inc(gDay_Token_Trig_Rall_Extr_All__Count);
             end;
-            
-            Print( '*** AFTER gDay_Token_Trig_Rall_Extr_Tand_Count: ' + IntToStr(gDay_Token_Trig_Rall_Extr_Tand_Count) ) ; 
-            
+
+            { Print( '*** AFTER gDay_Token_Trig_Rall_Extr_Tand_Count: ' + IntToStr(gDay_Token_Trig_Rall_Extr_Tand_Count) ) ; }
+
         end;
 
 
@@ -1730,6 +1751,10 @@ begin
                 begin
                     Str( gTrigger_M5_Buy_Rall_Extr_retrac , _text );
                     Print('gTrigger_M5_Buy_Rall_Extr_retrac: ' + _text );
+                    Str( _signal_EMA_Buy, _text  );
+                    Print('*** We want one signal TRUE, not BOTH: _signal_EMA_Buy: ' + _text );
+                    Str( _signal_RegLin_Buy, _text  );
+                    Print('*** We want one signal TRUE, not BOTH: _signal_RegLin_Buy: ' + _text );
                 end;
 
                 if gTrigger_M5_Sell_Rall_Extr_retrac then
@@ -1758,22 +1783,22 @@ begin
 
         SetCurrencyAndTimeframe( gCurrency , PERIOD_M5 );
 
-        Print(  '[ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC]: 1st Tick M5 BUY ' +
+        Print(  '[ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC]: M5 BUY TRIGGER ' +
                 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
                 'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
                 'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )
                 //'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 )
                 );
 
-        gTextName := 'TGR_RALL_EXTR_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
+        gTextName := 'TGRRALLEXTBUY_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
         if ObjectExists( gTextName ) then ObjectDelete( gTextName );
         if not(ObjectExists( gTextName )) then
         begin
             ObjectCreate( gTextName, obj_Text, 0, TimeCurrent, (Bid+Ask)/2 );
-            if _signal_EMA then
+            if _signal_EMA_Buy then
                 ObjectSetText(gTextName, 'O', 14, 'Consolas', clBlue);  // Possible placement for PowerTool trade long
-            if _signal_RegLin then
-                ObjectSetText(gTextName, '@', 14, 'Consolas', clBlue);  // Possible placement for PowerTool trade long            
+            if _signal_RegLin_Buy then
+                ObjectSetText(gTextName, '@', 14, 'Consolas', clBlue);  // Possible placement for PowerTool trade long
             ObjectSet(gTextName, OBJPROP_VALIGNMENT, tlCenter);     // StrategyInterfaceUnit
             ObjectSet(gTextName, OBJPROP_HALIGNMENT, taCenter );    // StrategyInterfaceUnit
         end;
@@ -1782,7 +1807,7 @@ begin
     else if gTrigger_M5_Sell_Rall_Extr_retrac then
     begin
 
-        Print(  '[ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC]: 1st Tick M5 SELL ' +
+        Print(  '[ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC]: M5 SELL TRIGGER ' +
                 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
                 'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
                 'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )
@@ -1794,10 +1819,10 @@ begin
         if not(ObjectExists( gTextName )) then
         begin
             ObjectCreate( gTextName, obj_Text, 0, TimeCurrent, (Bid+Ask)/2 );
-            if _signal_EMA then
+            if _signal_EMA_Sell then
                 ObjectSetText(gTextName, 'O', 14, 'Consolas', clRed);  // Possible placement for PowerTool trade long
-            if _signal_RegLin then
-                ObjectSetText(gTextName, '@', 14, 'Consolas', clRed);  // Possible placement for PowerTool trade long            
+            if _signal_RegLin_Sell then
+                ObjectSetText(gTextName, '@', 14, 'Consolas', clRed);  // Possible placement for PowerTool trade long
             ObjectSet(gTextName, OBJPROP_VALIGNMENT, tlCenter);     // StrategyInterfaceUnit
             ObjectSet(gTextName, OBJPROP_HALIGNMENT, taCenter );    // StrategyInterfaceUnit
         end;
@@ -1813,6 +1838,7 @@ begin
 
 
 end;        // ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC
+
 
 
 
@@ -1911,7 +1937,7 @@ begin
                                     (Open(1)    < gDriftline_D1_val_1)      // Below driftline
                                 and (Close(1)   < gDriftline_D1_val_1)
                                 and (Open(1) <= Close(1) )                  // Blue bar
-                                and (gD1_DayName_Curr <> 'Sun')             // Not Sunday     
+                                and (gD1_DayName_Curr <> 'Sun')             // Not Sunday
                             )
                                 or
                                 (
@@ -1941,14 +1967,23 @@ begin
             if gBarName_D1_FirstTick then
             begin
 
-                Str( gSetup_D1_Jaggy_Buy , _text );
-                Print( 'gSetup_D1_Jaggy_Buy - JAGGY: ' + _text );
+                if gSetup_D1_Jaggy_Buy then 
+                begin
+                    Str( gSetup_D1_Jaggy_Buy , _text );
+                    Print( 'gSetup_D1_Jaggy_Buy - JAGGY: ' + _text );
+                end;
 
-                Str( gSetup_D1_Jaggy_Sell , _text );
-                Print( 'gSetup_D1_Jaggy_Sell - JAGGY: ' + _text );
+                if gSetup_D1_Jaggy_Sell then
+                begin
+                    Str( gSetup_D1_Jaggy_Sell , _text );
+                    Print( 'gSetup_D1_Jaggy_Sell - JAGGY: ' + _text );
+                end;
 
-                Str( gSetup_D1_StayAway , _text );
-                Print( 'gSetup_D1_StayAway - JAGGY: ' + _text );
+                if gSetup_D1_StayAway then
+                begin
+                    Str( gSetup_D1_StayAway , _text );
+                    Print( 'gSetup_D1_StayAway - JAGGY: ' + _text );
+                end;
 
             end;
 
@@ -1966,46 +2001,32 @@ begin
         gH1_Token_Trig_Jaggy_Count  := 0 ;
         { one hour only one entry }
 
-        gDriftline_H1_val_1 := GetIndicatorValue( gDriftline_H1_Handle, 3 , 0 );
-        gDriftline_H1_val_2 := GetIndicatorValue( gDriftline_H1_Handle, 4 , 0 );
-        { The index for driftline has to be 3, not 1 ! }
 
-        { gBarWave_H1_val_1   := GetIndicatorValue( gBarWave_H1_Handle, 1 , 4 ); }
-        { gBarWave_H1_val_2   := GetIndicatorValue( gBarWave_H1_Handle, 2 , 4 ); }
+        gRSI7_H1_val_1      := GetIndicatorValue( gRSI7_H1_Handle , 1 , 0 ) ;
+        gRSI7_H1_val_2      := GetIndicatorValue( gRSI7_H1_Handle , 2 , 0 ) ;
 
 
-        //** Ver_3_20180126 **
+        gH1_OverBought      := ( gRSI7_H1_val_1 > (70.0 + 2.0) );       // Deeper retracement
+        gH1_OverSold        := ( gRSI7_H1_val_1 < (30.0 - 2.0) );       // Deeper retracement
 
-
-        { OLDER LOGIC IS DELETED }
-        {
-        Need older logic: refer to
-        C:\Users\Hendy\OneDrive\Documents\@Docs\Business Project - MultiForexScale\PowerTool 6\PT6_FT3_v2_20180114\
-            Powertool6_v2_20180114.pas
-        }
 
 
         Print(  '[ENTRY_MANAGEMENT_JAGGY]: First Tick H1 SETUP ' +
                 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
                 'Open(1)-H1: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
                 'Close(1)-H1: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' +
-                'Driftline_H1: '+ FloatToStrF( gDriftline_H1_val_1 , ffFixed , 6, 4 )
+                'RSI7-H1(1): '+ FloatToStrF( gRSI7_H1_val_1 , ffFixed , 7, 4 )
                 );
 
-        gSetup_H1_Jaggy_Buy  := (
-                                    gSetup_D1_Jaggy_Buy
-                                and ( Close(1) > gDriftline_H1_val_1 )              // H1 bars shows up thrust bounce
-                                and ( Open(1)   > gDriftline_H1_val_1 )
-                                // and ( gDriftline_H1_val_1 > gDriftline_H1_val_2 )
-            );
+
+        gSetup_H1_Jaggy_Buy     := ( gSetup_D1_Jaggy_Buy
+                                and  gH1_OverSold
+                        );
 
 
-        gSetup_H1_Jaggy_Sell   := (
-                                    gSetup_D1_Jaggy_Sell
-                                and ( Close(1)  < gDriftline_H1_val_1 )             // H1 bars show down thrust bounce
-                                and ( Open(1)   < gDriftline_H1_val_1 )
-                                // and ( gDriftline_H1_val_1 < gDriftline_H1_val_2 )
-            );
+        gSetup_H1_Jaggy_Sell    := ( gSetup_D1_Jaggy_Sell
+                                and  gH1_OverBought
+                        );
 
     end;        // End of { if gBarName_H1_FirstTick then }
 
@@ -2016,9 +2037,7 @@ begin
 
             if gBarName_H1_FirstTick then
             begin
-
-                Print('*** gBarName_H1_FirstTick event found JAGGY ENTRY: ***');
-
+                { Print('*** gBarName_H1_FirstTick event found JAGGY ENTRY: ***'); }
                 if gSetup_H1_Jaggy_Buy then
                 begin
                     Str( gSetup_H1_Jaggy_Buy , _text );
@@ -2040,7 +2059,7 @@ begin
     // Return the timeframe back to M5
     SetCurrencyAndTimeframe( gCurrency , PERIOD_M5 );
 
-    // TRIGGER M5 
+    // TRIGGER M5
     // ---------------------------------------------------------------------------------
     // ENTRY_MANAGEMENT_JAGGY
 
@@ -2048,26 +2067,93 @@ begin
     if gBarName_M5_FirstTick then
     begin
 
-        gRSI3_M5_val_1      := GetIndicatorValue( gRSI3_M5_Handle , 1 , 0 );
-        gRSI3_M5_val_2      := GetIndicatorValue( gRSI3_M5_Handle , 2 , 0 );
+        gBollingerM5_val_1_TopBand :=  GetIndicatorValue( gBollingerM5_Handle , 1 , 0 );
+        gBollingerM5_val_1_MidBand :=  GetIndicatorValue( gBollingerM5_Handle , 1 , 1 );
+        gBollingerM5_val_1_BotBand :=  GetIndicatorValue( gBollingerM5_Handle , 1 , 2 );
+
+        gBollingerM5_val_2_TopBand :=  GetIndicatorValue( gBollingerM5_Handle , 2 , 0 );
+        gBollingerM5_val_2_MidBand :=  GetIndicatorValue( gBollingerM5_Handle , 2 , 1 );
+        gBollingerM5_val_2_BotBand :=  GetIndicatorValue( gBollingerM5_Handle , 2 , 2 );
+
+        gBollingerM5_val_3_TopBand :=  GetIndicatorValue( gBollingerM5_Handle , 3 , 0 );
+        gBollingerM5_val_3_MidBand :=  GetIndicatorValue( gBollingerM5_Handle , 3 , 1 );
+        gBollingerM5_val_3_BotBand :=  GetIndicatorValue( gBollingerM5_Handle , 3 , 2 );
+
+
+        // Regression Line
+        gM5_RL_10_val_1     :=  GetIndicatorValue( gM5_RL_10_Handle , 1 , 0 );
+        gM5_RL_10_val_2     :=  GetIndicatorValue( gM5_RL_10_Handle , 2 , 0 );
+        gM5_RL_10_val_3     :=  GetIndicatorValue( gM5_RL_10_Handle , 3 , 0 );
+
+        gM5_RL_30_val_1     :=  GetIndicatorValue( gM5_RL_30_Handle , 1 , 0 );
+        gM5_RL_30_val_2     :=  GetIndicatorValue( gM5_RL_30_Handle , 2 , 0 );
+
+
+        // M5 BollingerBands Overbought or Oversold
+        // This is to avoid entry signal at non active market. Non active market meanings
+        // the movement is WITHIN BollingerBands 1 standard deviation
+
+        gM5_Setup_BollBand_Overbought := (
+                                    ( gM5_RL_10_val_2 > gBollingerM5_val_2_BotBand )
+                                or  ( gM5_RL_10_val_3 > gBollingerM5_val_3_BotBand )
+                            );
+
+        gM5_Setup_BollBand_Oversold   := (
+                                    ( gM5_RL_10_val_2 < gBollingerM5_val_2_BotBand )
+                                or  ( gM5_RL_10_val_3 < gBollingerM5_val_3_BotBand )
+                            );
+
 
 
         gTrigger_M5_Buy_Market_Jaggy   := ( gSetup_H1_Jaggy_Buy
-                                and ( (gRSI3_M5_val_1 > 50.0) and ( gRSI3_M5_val_2 <= 50.0 ) )
-                                and ( gH1_Token_Trig_Jaggy_Count < 1 )                                
-                                and ( gDay_Token_Trig_Jaggy_All_Count < 2 )
+                                and ( gM5_RL_10_val_1 >  gM5_RL_30_val_1 )      // Cross-over of Regression Line
+                                and ( gM5_RL_10_val_2 <= gM5_RL_30_val_2 )      // Cross-over of Regression Line
+                                and ( Close(1) < gD1_RecentClose )              // Oversold price, deep retracement
+                                and gM5_Setup_BollBand_Oversold                 // Oversold BollingerBands,
+                                                                                // to exclude false signal of inactive market
+                                and ( gH1_Token_Trig_Jaggy_Count < 1 )          // Hourly limitor
+                                and ( gDay_Token_Trig_Jaggy_All_Count < 2 )     // Daily signal limitor
                             );
-
-
         gTrigger_M5_Sell_Market_Jaggy  := ( gSetup_H1_Jaggy_Sell
-                                and ( (gRSI3_M5_val_1 < 50.0) and ( gRSI3_M5_val_2 >= 50.0 ) )
-                                and ( gH1_Token_Trig_Jaggy_Count < 1 )                                
-                                and ( gDay_Token_Trig_Jaggy_All_Count < 2 )
+                                and ( gM5_RL_10_val_1 <  gM5_RL_30_val_1 )      // Cross-under of Regression Line
+                                and ( gM5_RL_10_val_2 >= gM5_RL_30_val_2 )      // Cross-under of Regression Line
+                                and ( Close(1) >  gD1_RecentClose )             // Overbought price, deep retracement
+                                and gM5_Setup_BollBand_Overbought               // Oversold BollingerBands,
+                                                                                // to exclude false signal of inactive market
+                                and ( gH1_Token_Trig_Jaggy_Count < 1 )          // Hourly limitor
+                                and ( gDay_Token_Trig_Jaggy_All_Count < 2 )     // Daily signal limitor
 
                             );
 
 
-        // Control daily and hourly trigger 
+            // DEBUGGING
+            // -------------------------------------------
+
+            { if gSetup_H1_Jaggy_Sell then }
+            { begin }
+                { Print(  'DEBUG_[ENTRY_MANAGEMENT_JAGGY]: M5 Setup for Selling ' + }
+                        { 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )           + ' / ' +                          }
+                        { 'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )                  + ' / ' + }
+                        { 'RL(10)_val_1: '  + FloatToStrF( gM5_RL_10_val_1, ffNumber , 9 , 4 )    + ' / ' + }
+                        { 'RL(30)_val_1: '  + FloatToStrF( gM5_RL_30_val_1, ffNumber , 9 , 4 ) }
+                        { );             }
+            { end; }
+
+
+
+        { gTrigger_M5_Buy_Market_Jaggy   := ( gSetup_H1_Jaggy_Buy }
+                                { and ( (gRSI3_M5_val_1 > 50.0) and ( gRSI3_M5_val_2 <= 50.0 ) ) }
+                                { and ( gH1_Token_Trig_Jaggy_Count < 1 )                                 }
+                                { and ( gDay_Token_Trig_Jaggy_All_Count < 2 ) }
+                            { ); }
+        { gTrigger_M5_Sell_Market_Jaggy  := ( gSetup_H1_Jaggy_Sell }
+                                { and ( (gRSI3_M5_val_1 < 50.0) and ( gRSI3_M5_val_2 >= 50.0 ) ) }
+                                { and ( gH1_Token_Trig_Jaggy_Count < 1 )                                 }
+                                { and ( gDay_Token_Trig_Jaggy_All_Count < 2 ) }
+                            { ); }
+
+
+        // Control daily and hourly trigger
         // -------------------------------------------
 
         if gTrigger_M5_Buy_Market_Jaggy then
@@ -2103,7 +2189,7 @@ begin
 
 
 
-    // MARKING THE CHART WITH TRIGGER M5 
+    // MARKING THE CHART WITH TRIGGER M5
     // ---------------------------------------------------------------------------------
     // ENTRY_MANAGEMENT_JAGGY
 
@@ -2115,8 +2201,8 @@ begin
         Print(  '[ENTRY_MANAGEMENT_JAGGY]: M5 BUY Trigger ' +
                 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
                 'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
-                'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' +
-                'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 )
+                'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              {+ ' / ' +}
+                { 'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 ) }
                 );
 
         gTextName := 'TGR_JAGGY_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
@@ -2136,8 +2222,8 @@ begin
         Print(  '[ENTRY_MANAGEMENT_JAGGY]: M5 SELL Trigger ' +
                 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
                 'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
-                'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' +
-                'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 )
+                'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              {+ ' / ' +}
+                { 'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 ) }
                 );
 
         gTextName := 'TGR_JAGGY_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
@@ -2162,6 +2248,12 @@ begin
 
 
 end;        // ENTRY_MANAGEMENT_JAGGY
+
+
+
+
+
+
 
 
 
@@ -2653,7 +2745,7 @@ begin
   AddOptionValue('Market Mode' , 'Jaggy' );                                     // 1
   AddOptionValue('Market Mode' , 'Cant Tell Rally or Jaggy' );                  // 2
   AddOptionValue('Market Mode' , 'Flip Flop' );                                 // 3
-  
+
 
   RegOption     ('Trade Direction', ot_EnumType , gTradeDirection );
   AddOptionValue('Trade Direction' , 'BUY');        // 0
