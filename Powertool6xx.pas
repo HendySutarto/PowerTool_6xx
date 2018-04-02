@@ -141,7 +141,7 @@ library Powertool6X;
 
 uses
       interfaces,
-      Windows,
+      Windows,          // For MessageBox
       SysUtils,
       DateUtils,        // For WeekOfTheYear
       Graphics,         // For TPenStyle
@@ -238,6 +238,10 @@ var
     // D1 - Indicators
     // ---------------------------------------------------------------------------------
 
+    {** D1 Bar Counter **}
+    gD1_Bar_Count               : integer               ;
+
+
     {** Driftline_D1 **}
     gDriftline_D1_Handle        : integer               ;
     gDriftline_D1_val_1         : double                ;
@@ -279,22 +283,22 @@ var
 
 
     // Token counter (new one)
-    
+
     gDay_Token_Trig_Rall_Stan_Count         : integer   ;
-    
+
     gDay_Token_Trig_Rall_Extr_All__Count    : integer   ;
     gDay_Token_Trig_Rall_Extr_Main_Count    : integer   ;
     gDay_Token_Trig_Rall_Extr_Tand_Count    : integer   ;
 
 
     gDay_Token_Trig_Jaggy_All_Count         : integer   ;
-    
+
     gDay_Token_Trig_FlipF_All_Count         : integer   ;
 
 
     { gDailyToken_Seq_1_rule_1    : boolean               ; }
     { gDailyToken_Seq_2_rule_1    : boolean               ; }
-    
+
     gD1_RecentClose             : double                ;
 
     // Ver_3_20180126
@@ -333,14 +337,14 @@ var
 
     {** Hourly Token **}
     // Token for trigger one entry per hour
-    
+
     gH1_Token_Trig_Rall_Stan_Count      : integer       ;
-    
+
     gH1_Token_Trig_Rall_Extr_Main_Count : integer       ;
     gH1_Token_Trig_Rall_Extr_Tand_Count : integer       ;
 
     gH1_Token_Trig_Jaggy_Count  : integer               ;
-    
+
     gH1_Token_Trig_FlipF_Count  : integer               ;
 
     gH1_Token_Trigger           : boolean               ;       // Marked_for_deletion
@@ -568,6 +572,9 @@ var
 
 
 
+
+
+
 {///////////////////////////////////////////////////////////////////////////////////////////////////////}
 {*******************************************************************************************************}
 {**                                  SUPPORT FUNCTIONS & PROCEDURES                                   **}
@@ -717,18 +724,18 @@ begin
             if gBarName_D1_FirstTick then
             begin
 
-                if gSetup_D1_Rally_Buy then 
+                if gSetup_D1_Rally_Buy then
                 begin
                     Str( gSetup_D1_Rally_Buy , _text );
                     Print( 'gSetup_D1_Rally_Buy STANDARD: ' + _text );
                 end;
-                
+
                 if gSetup_D1_Rally_Sell then
                 begin
                     Str( gSetup_D1_Rally_Sell , _text );
                     Print( 'gSetup_D1_Rally_Sell STANDARD: ' + _text );
                 end;
-                
+
                 if gSetup_D1_StayAway then
                 begin
                     Str( gSetup_D1_StayAway , _text );
@@ -750,7 +757,7 @@ begin
         { Left as placeholder }
 
         SetCurrencyAndTimeframe( gCurrency , PERIOD_H1 );
-        
+
         gH1_Token_Trig_Rall_Stan_Count := 0 ;
         { one hour only one entry }
 
@@ -941,8 +948,8 @@ begin
         gM5_RL_30_val_1     :=  GetIndicatorValue( gM5_RL_30_Handle , 1 , 0 );
         gM5_RL_30_val_2     :=  GetIndicatorValue( gM5_RL_30_Handle , 2 , 0 );
 
-        
-        
+
+
         gTrigger_M5_Buy_Rally_Standard  := (
                                     gSetup_D1_Rally_Buy       // Ver_3_20180126
                             and     gOversold_M5
@@ -963,11 +970,11 @@ begin
                             and ( gM5_RL_10_val_2 >= gM5_RL_30_val_2 )
                                 and (gDay_Token_Trig_Rall_Stan_Count < 2)    // two triggers per day
                                 and ( gH1_Token_Trig_Rall_Stan_Count < 1 )               // one trigger per hour
-                            );                            
-                            
-                            
-        
-        
+                            );
+
+
+
+
         {
         The momentum event happens *ONLY* at first tick of M5 bar!
         }
@@ -1016,8 +1023,8 @@ begin
                             { ); }
 
 
-                             
-                            
+
+
         { gTrigger_M5_Buy_Rally_Standard  := ( }
                                     { gSetup_D1_Rally_Buy       // Ver_3_20180126 }
                             { and     gOversold_M5 }
@@ -1081,10 +1088,10 @@ begin
 
             // Increase hourly token
             Inc( gH1_Token_Trig_Rall_Stan_Count );
-            
+
             // Increase daily token
             Inc( gDay_Token_Trig_Rall_Stan_Count );
-            
+
             // After one trigger, cancel the gOversold_M5
             gOversold_M5    := false ;
 
@@ -1095,12 +1102,12 @@ begin
 
             // Increase hourly token
             Inc( gH1_Token_Trig_Rall_Stan_Count );
-            
+
             // Increase daily token
             Inc( gDay_Token_Trig_Rall_Stan_Count );
-            
+
             // After one trigger, cancel gOverbought_M5
-            gOverbought_M5 := false ;            
+            gOverbought_M5 := false ;
 
         end;
 
@@ -1328,13 +1335,13 @@ begin
             if gBarName_D1_FirstTick then
             begin
 
-                if gSetup_D1_Rally_Buy then 
+                if gSetup_D1_Rally_Buy then
                 begin
                     Str( gSetup_D1_Rally_Buy , _text );
                     Print( 'gSetup_D1_Rally_Buy EXTR_RETR: ' + _text );
                 end;
 
-                if gSetup_D1_Rally_Sell then 
+                if gSetup_D1_Rally_Sell then
                 begin
                     Str( gSetup_D1_Rally_Sell , _text );
                     Print( 'gSetup_D1_Rally_Sell EXTR_RETR: ' + _text );
@@ -1528,7 +1535,7 @@ begin
         _signal_RegLin_Sell := false ;
         _signal_EMA_Sell    := false ;
 
-        
+
 
         // Overbought and oversold rule
         // -------------------------------------------
@@ -1971,7 +1978,7 @@ begin
             if gBarName_D1_FirstTick then
             begin
 
-                if gSetup_D1_Jaggy_Buy then 
+                if gSetup_D1_Jaggy_Buy then
                 begin
                     Str( gSetup_D1_Jaggy_Buy , _text );
                     Print( 'gSetup_D1_Jaggy_Buy - JAGGY: ' + _text );
@@ -2279,7 +2286,7 @@ begin
     {===================================================================================================}
 
     {
-        Use ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC 
+        Use ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC
         as base to derive the FLIPFLOP
     }
 
@@ -2296,7 +2303,7 @@ begin
 
         // Set daily token to zero at opening bar of D1
         gDay_Token_Trig_FlipF_All_Count := 0 ;
-        
+
 
         // Recent closing price
         gD1_RecentClose     := Close(1);
@@ -2369,7 +2376,7 @@ begin
                     Print( 'gSetup_D1_FlipFlop_Sell: ' + _text );
                 end;
 
-                if gSetup_D1_StayAway then 
+                if gSetup_D1_StayAway then
                 begin
                     Str( gSetup_D1_StayAway , _text );
                     Print( 'gSetup_D1_StayAway - FLIPFLOP: ' + _text );
@@ -2387,7 +2394,7 @@ begin
 
 
         SetCurrencyAndTimeframe( gCurrency , PERIOD_H1 );
-        
+
         // Reset token for trigger every hour
         gH1_Token_Trig_FlipF_Count := 0 ;
 
@@ -2523,10 +2530,10 @@ begin
         SetCurrencyAndTimeframe( gCurrency , PERIOD_M5 );
 
         Print(  '[ENTRY_MANAGEMENT_FLIPFLOP]: M5 BUY Trigger ' +
-                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )           + ' / ' +                
+                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )           + ' / ' +
                 'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )                  + ' / ' +
                 'gM5_RL_10_val_1: '  + FloatToStrF( gM5_RL_10_val_1 , ffFixed , 9, 4 )      + ' / ' +
-                'gM5_RL_30_val_1: '  + FloatToStrF( gM5_RL_30_val_1 , ffFixed , 9, 4 )      
+                'gM5_RL_30_val_1: '  + FloatToStrF( gM5_RL_30_val_1 , ffFixed , 9, 4 )
                 );
 
         gTextName := 'TGR_FLIPFLOP_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
@@ -2544,10 +2551,10 @@ begin
     begin
 
         Print(  '[ENTRY_MANAGEMENT_FLIPFLOP]: M5 SELL Trigger ' +
-                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )           + ' / ' +                
+                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )           + ' / ' +
                 'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )                  + ' / ' +
                 'gM5_RL_10_val_1: '  + FloatToStrF( gM5_RL_10_val_1 , ffFixed , 9, 4 )      + ' / ' +
-                'gM5_RL_30_val_1: '  + FloatToStrF( gM5_RL_30_val_1 , ffFixed , 9, 4 )      
+                'gM5_RL_30_val_1: '  + FloatToStrF( gM5_RL_30_val_1 , ffFixed , 9, 4 )
                 );
 
         gTextName := 'TGR_FLIPFLOP__' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
@@ -2573,347 +2580,6 @@ begin
 end;
 
 
-
-
-
-
-
-
-
-
-
-
-procedure ENTRY_MANAGEMENT_FLIPFLOP_ORIG ; stdcall ;
-var
-        _text       :   string      ;
-begin
-
-    if (gMarketMode <> FLIPFLOP) and (gMarketMode <> CANTTELL_RALLY_OR_JAGGY) then exit ;
-
-    {===================================================================================================}
-    {  INDICATOR VALUE RETRIEVAL  }
-    {===================================================================================================}
-    { This procedure operates on the first tick of M5 }
-
-    gATR_M5_val_1 := GetIndicatorValue( gATR_M5_Handle , 1, 0  );
-
-
-    {===================================================================================================}
-    {  SIGNAL GENERATION: Consider all setups, then trigger  }
-    {===================================================================================================}
-
-
-
-    // SETUP D1 - FLIPFLOP
-    // -------------------------------------------
-
-    if gBarName_D1_FirstTick then
-    begin
-
-        SetCurrencyAndTimeframe( gCurrency , PERIOD_D1 );   // To set price picking on D1
-
-
-        // Set daily tokens true at opening bar
-        gDailyToken_Seq_1_rule_2 := true ;
-        gDailyToken_Seq_2_rule_2 := true ;
-
-
-
-        // Recent closing price
-        gD1_RecentClose     := Close(1);
-
-
-        gDriftline_D1_val_1 := GetIndicatorValue( gDriftline_D1_Handle , 3, 0 );
-        { The index for driftline value 1 recent bar has to be 3, not 1 ! }
-
-        gDriftline_D1_val_2 := GetIndicatorValue( gDriftline_D1_Handle , 4 , 0 );
-        { The index for driftline value 2 recent bar has to be 4, not 1 !
-          Ver_3_20180126 }
-        gDriftline_D1_val_3 := GetIndicatorValue( gDriftline_D1_Handle , 5 , 0 );
-
-
-        gBarWave_D1_val_1   := GetIndicatorValue( gBarWave_D1_Handle , 1, 4 );
-        gBarWave_D1_val_2   := GetIndicatorValue( gBarWave_D1_Handle , 2, 4 );
-
-
-        Print(  '[ENTRY_MANAGEMENT]: FLIPFLOP MODE First Tick D1 ' +
-                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
-                'Open(1)-D1: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
-                'Close(1)-D1: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' +
-                'Driftline_D1: '+ FloatToStrF( gDriftline_D1_val_1 , ffFixed , 6, 4 )   + ' / ' +
-                'BarWave_D1: '  + FloatToStrF( gBarWave_D1_val_1, ffNumber , 15 , 4 )
-                );
-
-
-        // Setup D1 Buy - FLIPFLOP
-        // -------------------------------------------
-
-        gSetup_D1_FlipFlop_Buy := (   // Recent bar body is above driftline of D1
-                                    (Open(1)    > gDriftline_D1_val_1)
-                                and (Close(1)   > gDriftline_D1_val_1)
-                                and (Close(1)  >= Open(1) )
-                                    // Recent bar wave is rising
-                                    // Recent bar is BLUE
-                                    // Needs pairing with Hourly H1 bounce up
-                            );
-
-
-        // Setup D1 Sell - FLIPFLOP
-        // -------------------------------------------
-
-        gSetup_D1_FlipFlop_Sell := (   // Recent bar body is below driftline of D1
-                                    (Open(1)    < gDriftline_D1_val_1)
-                                and (Close(1)   < gDriftline_D1_val_1)
-                                and (Close(1)  <= Open(1) )
-                                    // Recent bar wave is descending
-                                    // Recent bar is RED
-                                    // Needs pairing with Hourly H1 bounce down
-                            );
-
-
-
-        // Setup D1 Stay - FLIPFLOP Away
-        // -------------------------------------------
-
-        gSetup_D1_StayAway := (
-                                    (not gSetup_D1_FlipFlop_Buy)
-                                and (not gSetup_D1_FlipFlop_Sell)
-                            );
-
-
-    end;
-
-
-            // SETUP D1 FLIPFLOP MONITORING
-            // -------------------------------------------------------------------------
-            // This is to monitor H1 Bar length
-
-            if gBarName_D1_FirstTick then
-            begin
-
-
-                Str( gSetup_D1_FlipFlop_Buy , _text );
-                Print( 'gSetup_D1_FlipFlop_Buy: ' + _text );
-
-                Str( gSetup_D1_FlipFlop_Sell , _text );
-                Print( 'gSetup_D1_FlipFlop_Sell: ' + _text );
-
-                Str( gSetup_D1_StayAway , _text );
-                Print( 'gSetup_D1_StayAway - FLIPFLOP: ' + _text );
-
-            end;
-
-
-
-    // SETUP H1 - FLIPFLOP
-    // ---------------------------------------------------------------------------------
-    // *** IMPORTANT: Ver_3_20180126 does not use H1 !!!
-
-    if gBarName_H1_FirstTick then
-    begin
-
-
-        SetCurrencyAndTimeframe( gCurrency , PERIOD_H1 );
-
-        gRSI7_H1_val_1      := GetIndicatorValue( gRSI7_H1_Handle , 1 , 0 ) ;
-        gRSI7_H1_val_2      := GetIndicatorValue( gRSI7_H1_Handle , 2 , 0 ) ;
-
-
-        //** Ver_3_20180126 **
-
-
-        { OLDER LOGIC IS DELETED }
-        {
-        Need older logic: refer to
-        C:\Users\Hendy\OneDrive\Documents\@Docs\Business Project - MultiForexScale\PowerTool 6\PT6_FT3_v2_20180114\
-            Powertool6_v2_20180114.pas
-        }
-
-
-        Print(  '[ENTRY_MANAGEMENT]: First Tick H1 SETUP FLIPFLOP' +
-                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
-                'Open(1)-H1: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
-                'Close(1)-H1: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' +
-                'Driftline_H1: '+ FloatToStrF( gDriftline_H1_val_1 , ffFixed , 6, 4 )
-                );
-
-        gSetup_H1_FlipFlop_Buy  := (
-                                    gSetup_D1_FlipFlop_Buy
-                                and ( gRSI7_H1_val_1 >  40 )
-                                and ( gRSI7_H1_val_2 <= 40 )
-            );
-
-
-        gSetup_H1_FlipFlop_Sell   := (
-                                    gSetup_D1_FlipFlop_Sell
-                                and ( gRSI7_H1_val_1 < 60 )
-                                and ( gRSI7_H1_val_2 >= 60 )
-            );
-
-        {
-        Every single hour, if the event is found oversold with D1 uptrend, this become buy setup.
-        likewise, if found overbought with D1 downtrend, this become sell setup.
-        BUT
-        within the same hour, when M5 makes momentum back into main trend, the setup cancels itself
-        for that hour, until the next hour, if H1 is in retracement zone again.
-        This way, cancelling the setup, means one signal per hour per retracement hour.
-        }
-
-    end;
-
-
-            // SETUP H1 MONITORING FLIPFLOP
-            // -------------------------------------------------------------------------
-            // This is to monitor H1 Bar length
-
-            if gBarName_H1_FirstTick then
-            begin
-
-                Print('*** gBarName_H1_FirstTick event found FLIPFLOP ENTRY: ***');
-
-                Str( gSetup_D1_FlipFlop_Buy , _text );
-                Print( 'gSetup_D1_FlipFlop_Buy: ' + _text );
-                Str( gSetup_D1_FlipFlop_Sell , _text );
-                Print( 'gSetup_D1_Sell FLIPFLOP: ' + _text );
-
-                if gSetup_H1_FlipFlop_Buy then
-                begin
-                    Str( gSetup_H1_FlipFlop_Buy , _text );
-                    Print('gSetup_H1_FlipFlop_Buy: ' + _text );
-                end;
-
-                if gSetup_H1_FlipFlop_Sell then
-                begin
-                    Str( gSetup_H1_FlipFlop_Sell , _text );
-                    Print('gSetup_H1_FlipFlop_Sell: ' + _text );
-                end;
-
-            end;
-
-
-
-    // Return the timeframe back to M5
-    SetCurrencyAndTimeframe( gCurrency , PERIOD_M5 );
-
-    // TRIGGER M5 - FLIPFLOP
-    // ---------------------------------------------------------------------------------
-    // Ver_3_20180126
-    // Trigger type 2 is when D1 red bar in uptrend, we need hourly bounce up, and take the
-    // M5 cycle up as flagger
-    // Likewise
-
-
-    if gBarName_M5_FirstTick then
-    begin
-
-
-
-        gRSI3_M5_val_1      := GetIndicatorValue( gRSI3_M5_Handle , 1 , 0 );
-        gRSI3_M5_val_2      := GetIndicatorValue( gRSI3_M5_Handle , 2 , 0 );
-
-
-
-        gTrigger_M5_Buy_Market_FlipFlop   := ( gSetup_H1_FlipFlop_Buy
-                                and ( (gRSI3_M5_val_1 > 50.0) and ( gRSI3_M5_val_2 <= 50.0 ) )
-                                and (gDailyToken_Seq_1_rule_3 or gDailyToken_Seq_2_rule_3 )
-                            );
-
-
-        gTrigger_M5_Sell_Market_FlipFlop  := ( gSetup_H1_FlipFlop_Sell
-                                and ( (gRSI3_M5_val_1 < 50.0) and ( gRSI3_M5_val_2 >= 50.0 ) )
-                                and (gDailyToken_Seq_1_rule_3 or gDailyToken_Seq_2_rule_3 )
-                            );
-
-
-
-        // Cancel setups for this trigger
-        // -------------------------------------------
-
-        if gTrigger_M5_Buy_Market_FlipFlop then
-        begin
-
-            // Cancel sequentially, to allow two signals per day
-            if gDailyToken_Seq_1_rule_3 then
-                gDailyToken_Seq_1_rule_3 := false
-            else if gDailyToken_Seq_2_rule_3 then
-                gDailyToken_Seq_2_rule_3 := false ;
-
-        end;
-
-        if gTrigger_M5_Sell_Market_FlipFlop then
-        begin
-
-            // Cancel sequentially, to allow two signals per day
-            if gDailyToken_Seq_1_rule_3 then
-                gDailyToken_Seq_1_rule_3 := false
-            else if gDailyToken_Seq_2_rule_3 then
-                gDailyToken_Seq_2_rule_3 := false ;
-
-        end;
-
-        {**********  ADD PRINTS FOR trigger settings ***********}
-
-    end;
-
-
-
-    // MARKING THE CHART WITH TRIGGER M5 - FLIPFLOP
-    // ---------------------------------------------------------------------------------
-
-    if gTrigger_M5_Buy_Market_FlipFlop then
-    begin
-
-        SetCurrencyAndTimeframe( gCurrency , PERIOD_M5 );
-
-        Print(  '[ENTRY_MANAGEMENT]: First Tick M5 FLIPFLOP BUY Signal ' +
-                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
-                'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
-                'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' +
-                'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 )
-                );
-
-        gTextName := 'TGR_FLIPFLOP_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
-        if ObjectExists( gTextName ) then ObjectDelete( gTextName );
-        if not(ObjectExists( gTextName )) then
-        begin
-            ObjectCreate( gTextName, obj_Text, 0, TimeCurrent, (Bid+Ask)/2 );
-            ObjectSetText(gTextName, 'x', 14, 'Consolas', clBlue);  // Possible placement for PowerTool trade long
-            ObjectSet(gTextName, OBJPROP_VALIGNMENT, tlCenter);     // StrategyInterfaceUnit
-            ObjectSet(gTextName, OBJPROP_HALIGNMENT, taCenter );    // StrategyInterfaceUnit
-        end;
-
-    end
-    else if gTrigger_M5_Sell_Market_FlipFlop then
-    begin
-
-        Print(  '[ENTRY_MANAGEMENT]: First Tick M5 FLIPFLOP SELL Signal ' +
-                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
-                'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
-                'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' +
-                'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 )
-                );
-
-        gTextName := 'TGR_FLIPFLOP__' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
-        if ObjectExists( gTextName ) then ObjectDelete( gTextName );
-        if not(ObjectExists( gTextName )) then
-        begin
-            ObjectCreate( gTextName, obj_Text, 0, TimeCurrent, (Bid+Ask)/2 );
-            ObjectSetText(gTextName, 'x', 14, 'Consolas', clRed);  // Possible placement for PowerTool trade long
-            ObjectSet(gTextName, OBJPROP_VALIGNMENT, tlCenter);     // StrategyInterfaceUnit
-            ObjectSet(gTextName, OBJPROP_HALIGNMENT, taCenter );    // StrategyInterfaceUnit
-        end;
-    end;
-
-    {===================================================================================================}
-    {  COUNT EXISTING POSITION/S, ENTER INTO THE MARKET }
-    {  Open new Position when there is none, and add more if previous one in profit  }
-    {  Disable entry after large profit registers in the system  }
-    {  Disable entry in the same day after NEntry attempts }
-    {===================================================================================================}
-    { for every requirement, there are two variables at minimum to support requirement }
-
-
-end;
 
 
 
@@ -3026,6 +2692,76 @@ end;
 
 
 
+
+
+
+procedure OPEN_MULTIPLE_ORDERS_IN_6_DAYS_AND_CLOSE_THEM_AT_ONCE ; stdcall ; 
+// This is great demonstration for pyramiding into multi position and closing all trades at once.
+// The method is translatable to MQL4 !
+var
+    pOrderHandle                : integer       ;
+    pMagicNumberThisPosition    : integer       ;
+    pMessageBoxAnswer           : Word          ;
+    pPosIndex                   : integer       ;
+begin
+
+
+    // Open 6 Orders in 6 Days
+    // ---------------------------------------------------------------------------------
+
+    if gBarName_D1_FirstTick then begin
+
+        Inc( gD1_Bar_Count );
+
+        pMagicNumberThisPosition := 6871000 + gD1_Bar_Count ;
+
+        // Send Order
+        if gD1_Bar_Count <= 6 then begin
+            Print( 'Day #: ' + IntToStr( gD1_Bar_Count ) );
+            Print( '*** Orders Total PRE: ' + IntToStr( OrdersTotal ) ) ;
+            Print( '..... sending order ......' ) ;
+            SendInstantOrder(
+                    Symbol,
+                    op_Sell,
+                    1.1 ,
+                    0,
+                    0,
+                    'Dummy order on Day '+IntToStr(gD1_Bar_Count) ,
+                    pMagicNumberThisPosition ,
+                    pOrderHandle
+                );            
+            Print('*** Orders Total POST: ' + IntToStr( OrdersTotal )   + ' / ' +
+                  'OrderHandle (Ticket): '  + IntToStr( pOrderHandle )                    
+                    ) ;
+        end;
+    end;
+
+
+    // Close all 6 Orders
+    // ---------------------------------------------------------------------------------
+
+    if gBarName_D1_FirstTick and (gD1_Bar_Count = 7) then begin
+        // the Begin keyword right at the IF's line allows red marker highlight the block belong to IF block
+
+        Pause;
+        pMessageBoxAnswer := MessageBox(0, PChar('Day 7 Opening'), PChar('The positions are about to close'), MB_OK);
+        Pause;
+        // Close all orders
+        for pPosIndex := OrdersTotal-1 downto 0 do begin
+            Print( 'OrdersTotal BEFORE Closing the Order: ' + IntToStr( OrdersTotal ) );
+                OrderSelect( pPosIndex , SELECT_BY_POS , MODE_TRADES  );
+                Print( '   *** Closing the Order ***' );
+                CloseOrder( OrderTicket );                
+            Print( 'OrdersTotal AFTER Closing the Order: ' + IntToStr( OrdersTotal ) );            
+        end;
+        Pause;
+        pMessageBoxAnswer := MessageBox(0, PChar('Positions closure'), PChar('All Positions have been closed'), MB_OK);
+        Pause;
+    end;
+end;
+
+
+
 {///////////////////////////////////////////////////////////////////////////////////////////////////////}
 {*******************************************************************************************************}
 {**                                  CORE PROCEDURES IN FOREX TESTER                                  **}
@@ -3090,6 +2826,12 @@ end;
 {-----Reset strategy--------------------------------------}
 procedure ResetStrategy; stdcall;
 begin
+
+    // Initialisation
+    // ---------------------------------------------------------------------------------
+    gD1_Bar_Count   := 0 ;
+
+
 
     // Order Handle Initialisation
     // ---------------------------------------------------------------------------------
@@ -3257,9 +2999,8 @@ begin
     // Print the version on Journal
     // ---------------------------------------------------------------------------------
     Print(
-        'Ver_6X_20180325 Sun'
+        'Ver_6X_20180402 Mon'
         );
-
 
 end;
 
@@ -3279,11 +3020,8 @@ procedure GetSingleTick; stdcall;
     myYear , myMonth,
     myDay, myHour,
     myMin, mySec,
-    myMilli             :   Word        ;
-
+    myMilli                     : Word          ;
 begin
-
-
 
     {***************************************************************************************************}
     {**   FOUNDATION WORKS  **}
@@ -3391,6 +3129,15 @@ begin
     { end; }
 
 
+    
+    {***************************************************************************************************}
+    {**   OPENING MULTIPLE ORDERS AND CLOSE THEM AT ONCE  **}
+    {***************************************************************************************************}
+    
+    OPEN_MULTIPLE_ORDERS_IN_6_DAYS_AND_CLOSE_THEM_AT_ONCE ;
+    // This is great demonstration for pyramiding into multi position and closing all trades at once.
+    // The method is translatable to MQL4 !
+    
 
 
 
@@ -3404,35 +3151,10 @@ begin
     ENTRY_MANAGEMENT_FLIPFLOP;
 
 
+
+
+
     
-    
-    
-    
-    // if there is no order and fast SMA crosses slow SMA from top
-      // then open SELL order
-      { if (gOrderHandleP1 = -1) and ( gSMA1_Val_1 < gSMA2_Val_1 ) }
-        { and (gTradeDirection = SELL) and (gActivateSystem = YES) then }
-        { begin }
-          { SendInstantOrder(gCurrency , op_Sell, gP1_LotSize , 0, 0, '', 0, gOrderHandleP1 ); }
-          { gOrderStyleP1 := tp_Sell; }
-          { gOpenTimeP1 := Time(0); }
-        { end; }
-
-      // if there is no order and fast SMA crosses slow SMA from bottom
-      // then open BUY order
-      { if (gOrderHandleP1 = -1) and (gSMA1_Val_1 > gSMA1_Val_2 ) }
-        { and (gTradeDirection = BUY) and (gActivateSystem = YES) then }
-        { begin }
-          { SendInstantOrder(gCurrency , op_Buy, gP1_LotSize , 0, 0, '', 0, gOrderHandleP1 ); }
-          { gOrderStyleP1 := tp_Buy; }
-          { gOpenTimeP1 := Time(0); }
-        { end; }
-
-
-
-
-
-
 
 
 
