@@ -451,6 +451,9 @@ var
     gM5_Setup_BollBand_Overbought   : boolean           ;
     gM5_Setup_BollBand_Oversold     : boolean           ;
 
+    gM5_RL10_RL30_Posi_Curr         : string            ;
+    gM5_RL10_RL30_Posi_Prev         : string            ;
+
 
     // M5 - Triggers
     // -------------------------------------------
@@ -462,18 +465,20 @@ var
     gTrigger_M5_Sell_Rally_Standard   : boolean         ;
 
 
-    gTrigger_M5_Buy_Rall_extr_retrac  : boolean         ;
-    gTrigger_M5_Sell_Rall_extr_retrac : boolean         ;
+    gTrigger_M5_Buy_Rall_Extr_retrac  : boolean         ;
+    gTrigger_M5_Sell_Rall_Extr_retrac : boolean         ;
 
 
-    gM5_RL10_RL30_Posi_Curr         : string            ;
-    gM5_RL10_RL30_Posi_Prev         : string            ;
+    gTrigger_M5_Buy_Market_Jaggy      : boolean         ;
+    gTrigger_M5_Sell_Market_Jaggy     : boolean         ;
 
-    gTrigger_M5_Buy_Market_Jaggy    : boolean           ;
-    gTrigger_M5_Sell_Market_Jaggy   : boolean           ;
 
-    gTrigger_M5_Buy_Market_FlipFlop : boolean           ;
-    gTrigger_M5_Sell_Market_FlipFlop: boolean           ;
+    gTrigger_M5_Rally_AllSignals_Buy  : boolean         ;
+    gTrigger_M5_Rally_AllSignals_Sell : boolean         ;
+    { Consolidate all signals from Trendy }
+
+    gTrigger_M5_Buy_Market_FlipFlop   : boolean         ;
+    gTrigger_M5_Sell_Market_FlipFlop  : boolean         ;
 
 
     //** Previous version's does not fit and we need code simplicity
@@ -493,12 +498,47 @@ var
     gATR_M5_val_1               : double                ;
 
 
-    {** Stop Loss M5 **}
-    gStopLoss_Dist_val          : double                ;
-    gStopLoss_Dist_pips         : double                ;
+
+    // Entry, Stop Loss, Distance
+    // ---------------------------------------------------------------------------------
+
+    {** Spread **}
+    gSpreadPips                 : double                ;
+    gSpreadInPrice              : double                ;
+
+
+    {** Estimated entry price **}
+    gEstimatedEntryPrice_Buy    : double                ;
+    gEstimatedEntryPrice_Sell   : double                ;
+
+
+    {** Stop Loss **}
+    gStopLoss_Price_Buy         : double                ;
+    gStopLoss_Price_Sell        : double                ;
+
+    gDistance_Buy               : double                ;
+    gDistance_Sell              : double                ;
+    gDistance_Buy_Pips          : double                ;
+    gDistance_Sell_Pips         : double                ;
+    gDistance_Pips              : double                ;
+
+    {** Take Profit **}
+    gTakeProfitPrice_Buy        : double                ;
+    gTakeProfitPrice_Sell       : double                ;
+    
+    {** Large Profit Flag **}   
+    gEntryPrice_Position_One    : double                ;
+    gLargeProfitFlag            : boolean               ;
 
 
     {** Position Sizing **}
+
+    // General LotSize
+    gLotSize_General            :   double              ;
+    
+    gNumberOfOpenPositions      :   integer             ;
+    gMagicNumberThisPosition    :   integer             ;
+    gOrderHandle_General        :   integer             ;
 
     // P1
     gP1_LotSize                 :   double              ;
@@ -2692,10 +2732,304 @@ end;
 
 
 
+procedure ENTRY_MANAGEMENT_TRENDY_ALLSIGNALS ; stdcall ;
+var     i   :   integer ;
+begin
+
+
+    {++ 	Get trendy signals depend on trading mode     ++}
+    {++ 	EXCEPT FlipFlop signals     ++}
+    {-----------------------------------------------------------------------------------}
+
+    if ( gMarketMode = CANTTELL_RALLY_OR_JAGGY ) then begin
+
+        gTrigger_M5_Rally_AllSignals_Buy := (
+                            gTrigger_M5_Buy_Rally_Standard
+                        or  gTrigger_M5_Buy_Rall_Extr_retrac
+                        or  gTrigger_M5_Buy_Market_Jaggy
+                    );
+
+        gTrigger_M5_Rally_AllSignals_Sell := (
+                            gTrigger_M5_Sell_Rally_Standard
+                        or  gTrigger_M5_Sell_Rall_Extr_retrac
+                        or  gTrigger_M5_Sell_Market_Jaggy
+                    );
+    end
+    else if ( gMarketMode = RALLY ) then begin
+
+        gTrigger_M5_Rally_AllSignals_Buy := (
+                            gTrigger_M5_Buy_Rally_Standard
+                        or  gTrigger_M5_Buy_Rall_Extr_retrac
+                    );
+
+        gTrigger_M5_Rally_AllSignals_Sell := (
+                            gTrigger_M5_Sell_Rally_Standard
+                        or  gTrigger_M5_Sell_Rall_Extr_retrac
+                    );
+
+    end
+    else if ( gMarketMode = JAGGY ) then begin
+
+        gTrigger_M5_Rally_AllSignals_Buy := (
+                            gTrigger_M5_Buy_Market_Jaggy
+                    );
+
+        gTrigger_M5_Rally_AllSignals_Sell := (
+                            gTrigger_M5_Sell_Market_Jaggy
+                    );
+    end;
+
+    // All trendy signals now become one signal
+
+    {++ 	Initialise all prices to force zero values if not used     ++}
+    {-----------------------------------------------------------------------------------}
+
+    gEstimatedEntryPrice_Buy    := 0.0;
+    gEstimatedEntryPrice_Sell   := 0.0;
+    gStopLoss_Price_Buy         := 0.0;
+    gStopLoss_Price_Sell        := 0.0;
+    gDistance_Buy               := 0.0;
+    gDistance_Buy_Pips          := 0.0;
+    gDistance_Sell              := 0.0;
+    gDistance_Sell_Pips         := 0.0;
+    gDistance_Pips              := 0.0;
+    
+    gEntryPrice_Position_One    := 0.0;
+    gTakeProfitPrice_Buy        := 0.0;
+    gTakeProfitPrice_Sell       := 0.0;
+
+
+    {++ 	Calculate Estimated Entry Price     ++}
+    {-----------------------------------------------------------------------------------}
+
+    if gTrigger_M5_Rally_AllSignals_Buy then
+        gEstimatedEntryPrice_Buy := Open(0)  + gSpreadInPrice
+    else if gTrigger_M5_Rally_AllSignals_Sell then
+        gEstimatedEntryPrice_Sell := Open(0) - gSpreadInPrice;
 
 
 
-procedure OPEN_MULTIPLE_ORDERS_IN_6_DAYS_AND_CLOSE_THEM_AT_ONCE ; stdcall ; 
+    {++ 	Calculate Stop Loss     ++}
+    {-----------------------------------------------------------------------------------}
+    if gTrigger_M5_Rally_AllSignals_Buy then
+        gStopLoss_Price_Buy     := Min( Open(0) , Low(1) )
+                                    - 2.5 * gATR_M5_val_1 - gSpreadInPrice
+    else if gTrigger_M5_Rally_AllSignals_Sell then
+        gStopLoss_Price_Sell    := Max( Open(0) , High(1) )
+                                    + 2.5 * gATR_M5_val_1 + gSpreadInPrice ;
+
+
+
+    {++ 	Calculate Distance     ++}
+    {-----------------------------------------------------------------------------------}
+    if gTrigger_M5_Rally_AllSignals_Buy then begin
+        gDistance_Buy       := gEstimatedEntryPrice_Buy - gStopLoss_Price_Buy;
+        gDistance_Buy_Pips  := gDistance_Buy / (Point * gPointToPrice) ;
+        gDistance_Pips      := gDistance_Buy_Pips ;
+    end
+    else if gTrigger_M5_Rally_AllSignals_Sell then begin
+        gDistance_Sell      := gStopLoss_Price_Sell - gEstimatedEntryPrice_Sell ;
+        gDistance_Sell_Pips := gDistance_Sell / (Point * gPointToPrice);
+        gDistance_Pips      := gDistance_Sell_Pips ;
+    end;
+
+    {++ 	Calculate Position sizing     ++}
+    {-----------------------------------------------------------------------------------}
+
+    gRiskSizePercent := gRiskSize  / 100.0 ;
+
+    // Calculate gLotSize_General for NORMAL CONTRACT (not MINI)
+    if gTrigger_M5_Rally_AllSignals_Buy then begin
+            gLotSize_General :=
+                ( gRiskSizePercent * AccountEquity ) / gDistance_Buy / 100000.0 ;
+        if AnsiPos('JPY', gCurrency) > 0 then
+            gLotSize_General :=
+                ( gRiskSizePercent * AccountEquity ) / gDistance_Buy / 1000.0 ;
+    end
+    else if gTrigger_M5_Rally_AllSignals_Sell then begin
+            gLotSize_General :=
+                ( gRiskSizePercent * AccountEquity ) / gDistance_Sell / 100000.0 ;
+        if AnsiPos('JPY', gCurrency) > 0 then
+            gLotSize_General :=
+                ( gRiskSizePercent * AccountEquity ) / gDistance_Sell / 1000.0 ;
+    end;
+
+        // Example 1:
+        // risk = $100 ; dist = 15 pips (GBPJPY)
+        // lot size = $100 / (15 * 0.01) / 1000.00 = 0.67 normal contracts
+
+        // Example 2:
+        // risk = $100 ; dist = 15 pips (EURUSD)
+        // $100 / (15 * 0.0001) / 100000.00 = 0.67 normal contracts
+
+
+    if (gTrigger_M5_Rally_AllSignals_Buy or gTrigger_M5_Rally_AllSignals_Sell) then begin
+        Print('[ENTRY_MANAGEMENT_TRENDY_ALLSIGNALS]: ' +
+        'Lot size'          + FloatToStrF(gLotSize_General , ffNumber, 7,1 )  + ' / ' +
+        'Distance in pips: '+ FloatToStrF(gDistance_Pips , ffNumber, 7,1 )    + ' / ' +
+        'AccountEquity: '   + FloatToStrF(AccountEquity , ffCurrency , 12,2 ) + ' / ' +
+        'Risk size: '       + FloatToStrF(gRiskSize , ffFixed, 5,2) + '% '
+                );
+    end;
+
+
+    {++ 	Send Order Position sizing     ++}
+    {-----------------------------------------------------------------------------------}
+
+    gNumberOfOpenPositions := GetNumberOfOpenPositions ;
+    // TechnicalFunctions.PAS
+    // Convertible to MQ4
+    
+    if gNumberOfOpenPositions <= 6 then begin
+    
+    
+        // Check Historical Trade with Large Profit
+        // -------------------------------------------------------------------------
+        
+        { if (gLargeProfitFlag = false) then  }
+            { for i:=0 to HistoryTotal - 1 do }
+            { begin }
+                { if OrderSelect(i, SELECT_BY_POS, MODE_HISTORY) then }
+                    { if (OrderProfitPips > 800.0 - 10.0) then begin }
+                        { gLargeProfitFlag := true ; }
+                        { break; }
+                    { end; }
+            { end; }
+
+            
+
+        // Position 1
+        // -------------------------------------------------------------------------
+
+        if gTrigger_M5_Rally_AllSignals_Buy 
+            and (gLargeProfitFlag = false)
+            and (gNumberOfOpenPositions = 0) then begin
+    
+            gMagicNumberThisPosition := 6871000 + (gNumberOfOpenPositions+1);
+    
+            // Take profit since 800 pips of first position
+            gTakeProfitPrice_Buy := Open(0) + 800.0 * (Point * gPointToPrice);
+            gEntryPrice_Position_One    := Open(0) ;
+            
+            Print( '..... sending order ......' ) ;
+            SendInstantOrder(
+                    Symbol,
+                    op_Buy,
+                    gLotSize_General ,
+                    gStopLoss_Price_Buy,
+                    gTakeProfitPrice_Buy,
+                    'PositionNumber_'+IntToStr(gNumberOfOpenPositions+1) ,
+                    gMagicNumberThisPosition ,
+                    gOrderHandle_General
+                );
+            Print('*** Orders Total POST: ' + IntToStr( OrdersTotal )   + ' / ' +
+                  'OrderHandle (Ticket): '  + IntToStr( gOrderHandle_General )
+                    ) ;
+        end
+        else if gTrigger_M5_Rally_AllSignals_Sell 
+            and (gLargeProfitFlag = false)
+            and (gNumberOfOpenPositions = 0) then begin
+
+            gMagicNumberThisPosition := 6871000 + (gNumberOfOpenPositions+1);
+            
+            // Take profit since 800 pips of first position
+            gTakeProfitPrice_Sell := Open(0) - 800.0 * (Point * gPointToPrice);
+            gEntryPrice_Position_One    := Open(0) ;
+            
+            Print( '..... sending order ......' ) ;
+            SendInstantOrder(
+                    Symbol,
+                    op_Sell,
+                    gLotSize_General ,
+                    gStopLoss_Price_Sell,
+                    gTakeProfitPrice_Sell,
+                    'PositionNumber_'+IntToStr(gNumberOfOpenPositions+1) ,
+                    gMagicNumberThisPosition ,
+                    gOrderHandle_General
+                );
+            Print('*** Orders Total POST: ' + IntToStr( OrdersTotal )   + ' / ' +
+                  'OrderHandle (Ticket): '  + IntToStr( gOrderHandle_General )
+                    ) ;        
+        end;
+        
+        
+        // Position 2, 3, 4, 5, 6
+        // -------------------------------------------------------------------------        
+        if gTrigger_M5_Rally_AllSignals_Buy 
+            and (gLargeProfitFlag = false)        
+            and (gNumberOfOpenPositions in [1, 2, 3, 4, 5]) then begin
+
+            
+            // Check latest position if profitable
+            if OrderSelect((OrdersTotal-1), SELECT_BY_POS, MODE_TRADES) then 
+                if OrderProfitPips > 0.0 then begin
+            
+                    gMagicNumberThisPosition := 6871000 + (gNumberOfOpenPositions+1);
+                                        
+                    Print( '..... sending order ......' ) ;
+                    SendInstantOrder(
+                            Symbol,
+                            op_Buy,
+                            gLotSize_General ,
+                            gStopLoss_Price_Buy,
+                            gTakeProfitPrice_Buy,   // Take profit since 800 pips of first position
+                            'PositionNumber_'+IntToStr(gNumberOfOpenPositions+1) ,
+                            gMagicNumberThisPosition ,
+                            gOrderHandle_General
+                        );
+                    Print('*** Orders Total POST: ' + IntToStr( OrdersTotal )   + ' / ' +
+                          'OrderHandle (Ticket): '  + IntToStr( gOrderHandle_General )
+                            ) ;
+                end;
+                    
+                    
+        end
+        else if gTrigger_M5_Rally_AllSignals_Sell 
+            and (gLargeProfitFlag = false)
+            and (gNumberOfOpenPositions in [1, 2, 3, 4, 5]) then begin
+
+            // Check latest position if profitable
+            if OrderSelect((OrdersTotal-1), SELECT_BY_POS, MODE_TRADES) then 
+                if OrderProfitPips > 0.0 then begin
+            
+                    gMagicNumberThisPosition := 6871000 + (gNumberOfOpenPositions+1);
+                                        
+                    Print( '..... sending order ......' ) ;
+                    SendInstantOrder(
+                            Symbol,
+                            op_Sell,
+                            gLotSize_General ,
+                            gStopLoss_Price_Sell,
+                            gTakeProfitPrice_Sell,  // Take profit since 800 pips of first position
+                            'PositionNumber_'+IntToStr(gNumberOfOpenPositions+1) ,
+                            gMagicNumberThisPosition ,
+                            gOrderHandle_General
+                        );
+                    Print('*** Orders Total POST: ' + IntToStr( OrdersTotal )   + ' / ' +
+                          'OrderHandle (Ticket): '  + IntToStr( gOrderHandle_General )
+                            ) ;        
+                end;
+        end;
+        
+        
+        // Check Large Profit on Open Position
+        // -----------------------------------------------------------------------------
+        // The idea is to be able to cancel the flag for the next trend
+                
+        if OrderSelect( 0 , SELECT_BY_POS , MODE_TRADES ) 
+            and ( gLargeProfitFlag = false )  then begin
+                if ( OrderProfitPips >= (800.0-10.0) ) then
+                    gLargeProfitFlag := true ;
+        end;
+        
+        
+    end;
+
+
+end; // End procedure ENTRY_MANAGEMENT_TRENDY_ALLSIGNALS
+
+
+procedure OPEN_MULTIPLE_ORDERS_IN_6_DAYS_AND_CLOSE_THEM_AT_ONCE ; stdcall ;
 // This is great demonstration for pyramiding into multi position and closing all trades at once.
 // The method is translatable to MQL4 !
 var
@@ -2729,9 +3063,9 @@ begin
                     'Dummy order on Day '+IntToStr(gD1_Bar_Count) ,
                     pMagicNumberThisPosition ,
                     pOrderHandle
-                );            
+                );
             Print('*** Orders Total POST: ' + IntToStr( OrdersTotal )   + ' / ' +
-                  'OrderHandle (Ticket): '  + IntToStr( pOrderHandle )                    
+                  'OrderHandle (Ticket): '  + IntToStr( pOrderHandle )
                     ) ;
         end;
     end;
@@ -2751,8 +3085,8 @@ begin
             Print( 'OrdersTotal BEFORE Closing the Order: ' + IntToStr( OrdersTotal ) );
                 OrderSelect( pPosIndex , SELECT_BY_POS , MODE_TRADES  );
                 Print( '   *** Closing the Order ***' );
-                CloseOrder( OrderTicket );                
-            Print( 'OrdersTotal AFTER Closing the Order: ' + IntToStr( OrdersTotal ) );            
+                CloseOrder( OrderTicket );
+            Print( 'OrdersTotal AFTER Closing the Order: ' + IntToStr( OrdersTotal ) );
         end;
         Pause;
         pMessageBoxAnswer := MessageBox(0, PChar('Positions closure'), PChar('All Positions have been closed'), MB_OK);
@@ -2806,12 +3140,15 @@ begin
   AddOptionValue('Market Mode' , 'Cant Tell Rally or Jaggy' );                  // 2
   AddOptionValue('Market Mode' , 'Flip Flop' );                                 // 3
 
+  { RegOption     ('Large Profit', ot_Boolean , gLargeProfitFlag ); }
+  { AddOptionValue('Large Profit' , 'false');       }
+  { AddOptionValue('Large Profit' , 'true');        }
 
+  
   RegOption     ('Trade Direction', ot_EnumType , gTradeDirection );
   AddOptionValue('Trade Direction' , 'BUY');        // 0
   AddOptionValue('Trade Direction' , 'SELL');       // 1
-  AddOptionValue('Trade Direction' , 'BUY_SELL');   // 2
-
+  AddOptionValue('Trade Direction' , 'BUY_SELL');   // 2  
 
 end;
 
@@ -2827,10 +3164,31 @@ end;
 procedure ResetStrategy; stdcall;
 begin
 
+    // Set Point to Price
+    // ---------------------------------------------------------------------------------
+
+    if( (Digits = 5) or (Digits=3) or (Digits = 1) )then
+        gPointToPrice := 10.0
+    else
+        gPointToPrice := 1.0 ;
+
+
+
     // Initialisation
     // ---------------------------------------------------------------------------------
+
     gD1_Bar_Count   := 0 ;
 
+    gSpreadPips     := 3.0 ;
+    gSpreadInPrice  := gSpreadPips * (Point * gPointToPrice);
+    
+    gLargeProfitFlag    := false ;
+
+    {** Note:
+        Point = minimum price value for the selected currency.
+                ex/ digit 5,3,1 ---> 150.001 ; minimum value is 0.001 or 0.1 pips
+                    digit 4,2   ---> 150.01  ; minimum value is 0.01 or 1 pips
+    **}
 
 
     // Order Handle Initialisation
@@ -2968,14 +3326,6 @@ begin
                 );
 
 
-
-    // Establish Point to Price
-    // ---------------------------------------------------------------------------------
-
-    if( (Digits = 5) or (Digits=3) or (Digits = 1) )then
-        gPointToPrice := 10.0
-    else
-        gPointToPrice := 1.0 ;
 
 
 
@@ -3129,15 +3479,15 @@ begin
     { end; }
 
 
-    
+
     {***************************************************************************************************}
     {**   OPENING MULTIPLE ORDERS AND CLOSE THEM AT ONCE  **}
     {***************************************************************************************************}
-    
-    OPEN_MULTIPLE_ORDERS_IN_6_DAYS_AND_CLOSE_THEM_AT_ONCE ;
+
+    // OPEN_MULTIPLE_ORDERS_IN_6_DAYS_AND_CLOSE_THEM_AT_ONCE ;
     // This is great demonstration for pyramiding into multi position and closing all trades at once.
     // The method is translatable to MQL4 !
-    
+
 
 
 
@@ -3151,10 +3501,13 @@ begin
     ENTRY_MANAGEMENT_FLIPFLOP;
 
 
+    // Roll up all trendy signals into one entry trigger for trendy market
+    // Perform actual entry
+    //
+    ENTRY_MANAGEMENT_TRENDY_ALLSIGNALS ;
 
 
 
-    
 
 
 
