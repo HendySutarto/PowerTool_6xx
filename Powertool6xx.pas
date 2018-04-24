@@ -180,6 +180,8 @@ type
 
     //** Ver_4_20180204 **
     TMarketMode         = (RALLY , JAGGY , CANTTELL_RALLY_OR_JAGGY , FLIPFLOP  );
+    
+    TSystemLockStatus   = (LOCKED , UNLOCKED);
 
 
 
@@ -200,8 +202,23 @@ var
     gPointToPrice           :   double                  ;
 
     gTradeDirection         :   TTradeDirection         ;       // 0 -> BUY | 1 -> SELL | 2 -> BUY_SELL
-    gTrendDirection_D1      :   TTrendDirection         ;
 
+    // Trend Direction: UP, DOWN, SIDEWAY
+    gTrend_D1_Curr          :   TTrendDirection         ;
+    gTrend_D1_Prev          :   TTrendDirection         ;
+    // For gTrend_D1_Prev -- Update value at the end of GetSingleTick
+
+    gTrend_D1_NewUp_NewDown :   boolean                 ;    
+    // Flag for new up trend or downtrend. Sideway trend does not count
+    gSystemTradeLockStatus  :   TSystemLockStatus       ;
+    // With key for system to trade, we can activate or deactivate system 
+    // from the outside of the system. 
+    // For example when new trend exist, but big picture is not favorable
+    // after long large trend, and we don’t want the system trade it,
+    // then we can deactivate the system.
+    
+    
+    
     gMarketMode             :   TMarketMode             ;
 
 
@@ -540,53 +557,69 @@ var
     gMagicNumberThisPosition    :   integer             ;
     gOrderHandle_General        :   integer             ;
 
-    // P1
-    gP1_LotSize                 :   double              ;
-    gP1_OrderHandle             :   integer             ;
-    gP1_OrderStyle              :   TTradePositionType  ;
-    gP1_OpenTime                :   TDateTime           ;
 
-    // P2
-    gP2_LotSize                 :   double              ;
-    gP2_OrderHandle             :   integer             ;
-    gP2_OrderStyle              :   TTradePositionType  ;
-    gP2_OpenTime                :   TDateTime           ;
+    {++ FILES for VARIABLE SUPPORT ++}
+    {-----------------------------------------------------------------------------------}
 
-    // P3
-    gP3_LotSize                 :   double              ;
-    gP3_OrderHandle             :   integer             ;
-    gP3_OrderStyle              :   TTradePositionType  ;
-    gP3_OpenTime                :   TDateTime           ;
+    // Directory
+    gVarFileDirectory               :   string          ;
+    
+    // gLargeProfitFlag     
+    gVarFile_gLargeProfitFlag_Text  :   string          ;
+    
+    gToggleCheck_FileVar_AtNewTrend :   boolean         ;
+    
+    
+    
+    
+    {***    DELETE IF CONFIRMED UNUSED    ****}
+    { // P1 }
+    { gP1_LotSize                 :   double              ; }
+    { gP1_OrderHandle             :   integer             ; }
+    { gP1_OrderStyle              :   TTradePositionType  ; }
+    { gP1_OpenTime                :   TDateTime           ; }
 
-    // P4
-    gP4_LotSize                 :   double              ;
-    gP4_OrderHandle             :   integer             ;
-    gP4_OrderStyle              :   TTradePositionType  ;
-    gP4_OpenTime                :   TDateTime           ;
+    { // P2 }
+    { gP2_LotSize                 :   double              ; }
+    { gP2_OrderHandle             :   integer             ; }
+    { gP2_OrderStyle              :   TTradePositionType  ; }
+    { gP2_OpenTime                :   TDateTime           ; }
 
-    // P5
-    gP5_LotSize                 :   double              ;
-    gP5_OrderHandle             :   integer             ;
-    gP5_OrderStyle              :   TTradePositionType  ;
-    gP5_OpenTime                :   TDateTime           ;
+    { // P3 }
+    { gP3_LotSize                 :   double              ; }
+    { gP3_OrderHandle             :   integer             ; }
+    { gP3_OrderStyle              :   TTradePositionType  ; }
+    { gP3_OpenTime                :   TDateTime           ; }
 
-    // P6
-    gP6_LotSize                 :   double              ;
-    gP6_OrderHandle             :   integer             ;
-    gP6_OrderStyle              :   TTradePositionType  ;
-    gP6_OpenTime                :   TDateTime           ;
+    { // P4 }
+    { gP4_LotSize                 :   double              ; }
+    { gP4_OrderHandle             :   integer             ; }
+    { gP4_OrderStyle              :   TTradePositionType  ; }
+    { gP4_OpenTime                :   TDateTime           ; }
 
-    // P7
-    gP7_LotSize                 :   double              ;
-    gP7_OrderHandle             :   integer             ;
-    gP7_OrderStyle              :   TTradePositionType  ;
-    gP7_OpenTime                :   TDateTime           ;
+    { // P5 }
+    { gP5_LotSize                 :   double              ; }
+    { gP5_OrderHandle             :   integer             ; }
+    { gP5_OrderStyle              :   TTradePositionType  ; }
+    { gP5_OpenTime                :   TDateTime           ; }
 
-    // P8
-    gP8_LotSize                 :   double              ;
-    gP8_OrderHandle             :   integer             ;
-    gP8_OrderStyle              :   TTradePositionType  ;
-    gP8_OpenTime                :   TDateTime           ;
+    { // P6 }
+    { gP6_LotSize                 :   double              ; }
+    { gP6_OrderHandle             :   integer             ; }
+    { gP6_OrderStyle              :   TTradePositionType  ; }
+    { gP6_OpenTime                :   TDateTime           ; }
+
+    { // P7 }
+    { gP7_LotSize                 :   double              ; }
+    { gP7_OrderHandle             :   integer             ; }
+    { gP7_OrderStyle              :   TTradePositionType  ; }
+    { gP7_OpenTime                :   TDateTime           ; }
+
+    { // P8 }
+    { gP8_LotSize                 :   double              ; }
+    { gP8_OrderHandle             :   integer             ; }
+    { gP8_OrderStyle              :   TTradePositionType  ; }
+    { gP8_OpenTime                :   TDateTime           ; }
 
 
 
@@ -599,10 +632,10 @@ var
     {++ OPEN POSITION TRACKER ++}
     {-----------------------------------------------------------------------------------}
 
-    gP1_Profit_Pips             :   double              ;
-    gP1_Profit_Price            :   double              ;
-    gP1_LargeProfitExit_Bool    :   boolean             ;
-    gOpenPositionsNumber        :   integer             ;   // also OrderTotals()
+    { gP1_Profit_Pips             :   double              ; }
+    { gP1_Profit_Price            :   double              ; }
+    { gP1_LargeProfitExit_Bool    :   boolean             ; }
+    { gOpenPositionsNumber        :   integer             ;   // also OrderTotals() }
 
 
     {++ OBJECT ON CHART ++}
@@ -767,19 +800,19 @@ begin
                 if gSetup_D1_Rally_Buy then
                 begin
                     Str( gSetup_D1_Rally_Buy , _text );
-                    Print( 'gSetup_D1_Rally_Buy STANDARD: ' + _text );
+                    { Print( 'gSetup_D1_Rally_Buy STANDARD: ' + _text ); }
                 end;
 
                 if gSetup_D1_Rally_Sell then
                 begin
                     Str( gSetup_D1_Rally_Sell , _text );
-                    Print( 'gSetup_D1_Rally_Sell STANDARD: ' + _text );
+                    { Print( 'gSetup_D1_Rally_Sell STANDARD: ' + _text ); }
                 end;
 
                 if gSetup_D1_StayAway then
                 begin
                     Str( gSetup_D1_StayAway , _text );
-                    Print( 'gSetup_D1_StayAway STANDARD: ' + _text );
+                    { Print( 'gSetup_D1_StayAway STANDARD: ' + _text ); }
                 end;
 
             end;
@@ -902,13 +935,13 @@ begin
                 if gSetup_H1_Rally_Buy then
                 begin
                     Str( gSetup_H1_Rally_Buy , _text );
-                    Print('gSetup_H1_Rally_Buy STANDARD: ' + _text );
+                    { Print('gSetup_H1_Rally_Buy STANDARD: ' + _text ); }
                 end;
 
                 if gSetup_H1_Rally_Sell then
                 begin
                     Str( gSetup_H1_Rally_Sell , _text );
-                    Print('gSetup_H1_Rally_Sell STANDARD: ' + _text );
+                    { Print('gSetup_H1_Rally_Sell STANDARD: ' + _text ); }
                 end;
 
             end;
@@ -1158,13 +1191,13 @@ begin
                 if gTrigger_M5_Buy_Rally_Standard then
                 begin
                     Str( gTrigger_M5_Buy_Rally_Standard , _text );
-                    Print('gTrigger_M5_Buy_Rally_Standard: ' + _text );
+                    { Print('gTrigger_M5_Buy_Rally_Standard: ' + _text ); }
                 end;
 
                 if gTrigger_M5_Sell_Rally_Standard then
                 begin
                     Str( gTrigger_M5_Sell_Rally_Standard , _text );
-                    Print('gTrigger_M5_Sell_Rally_Standard: ' + _text );
+                    { Print('gTrigger_M5_Sell_Rally_Standard: ' + _text ); }
                 end;
 
     end;
@@ -1181,12 +1214,12 @@ begin
 
         SetCurrencyAndTimeframe( gCurrency , PERIOD_M5 );
 
-        Print(  '[ENTRY_MANAGEMENT_RALLY_STANDARD]: 1st Tick M5 BUY Signal ' +
-                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
-                'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
-                'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )
-                //'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 )
-                );
+        { Print(  '[ENTRY_MANAGEMENT_RALLY_STANDARD]: 1st Tick M5 BUY Signal ' + }
+                { 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' + }
+                { 'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' + }
+                { 'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 ) }
+                { //'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 ) }
+                { ); }
 
         gTextName := 'TGR_RALLSTAN_B_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
         if ObjectExists( gTextName ) then ObjectDelete( gTextName );
@@ -1202,12 +1235,12 @@ begin
     else if gTrigger_M5_Sell_Rally_Standard then
     begin
 
-        Print(  '[ENTRY_MANAGEMENT_RALLY_STANDARD]: 1st Tick M5 SELL Signal ' +
-                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
-                'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
-                'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )
-                //'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 )
-                );
+        { Print(  '[ENTRY_MANAGEMENT_RALLY_STANDARD]: 1st Tick M5 SELL Signal ' + }
+                { 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' + }
+                { 'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' + }
+                { 'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 ) }
+                { //'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 ) }
+                { ); }
 
         gTextName := 'TGR_RALLSTAN_S_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
         if ObjectExists( gTextName ) then ObjectDelete( gTextName );
@@ -1299,13 +1332,13 @@ begin
         gBarWave_D1_val_2   := GetIndicatorValue( gBarWave_D1_Handle , 2, 4 );
 
 
-        Print(  '[ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC]: First Tick D1 ' +
-                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
-                'Open(1)-D1: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
-                'Close(1)-D1: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' +
-                'Driftline_D1: '+ FloatToStrF( gDriftline_D1_val_1 , ffFixed , 6, 4 )   + ' / ' +
-                'BarWave_D1: '  + FloatToStrF( gBarWave_D1_val_1, ffNumber , 15 , 4 )
-                );
+        { Print(  '[ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC]: First Tick D1 ' + }
+                { 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' + }
+                { 'Open(1)-D1: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' + }
+                { 'Close(1)-D1: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' + }
+                { 'Driftline_D1: '+ FloatToStrF( gDriftline_D1_val_1 , ffFixed , 6, 4 )   + ' / ' + }
+                { 'BarWave_D1: '  + FloatToStrF( gBarWave_D1_val_1, ffNumber , 15 , 4 ) }
+                { ); }
 
 
         // Setup D1 Buy - RALLY
@@ -1378,19 +1411,19 @@ begin
                 if gSetup_D1_Rally_Buy then
                 begin
                     Str( gSetup_D1_Rally_Buy , _text );
-                    Print( 'gSetup_D1_Rally_Buy EXTR_RETR: ' + _text );
+                    { Print( 'gSetup_D1_Rally_Buy EXTR_RETR: ' + _text ); }
                 end;
 
                 if gSetup_D1_Rally_Sell then
                 begin
                     Str( gSetup_D1_Rally_Sell , _text );
-                    Print( 'gSetup_D1_Rally_Sell EXTR_RETR: ' + _text );
+                    { Print( 'gSetup_D1_Rally_Sell EXTR_RETR: ' + _text ); }
                 end;
 
                 if gSetup_D1_StayAway then
                 begin
                     Str( gSetup_D1_StayAway , _text );
-                    Print( 'gSetup_D1_StayAway EXTR_RETR: ' + _text );
+                    { Print( 'gSetup_D1_StayAway EXTR_RETR: ' + _text ); }
                 end;
 
             end;
@@ -1426,13 +1459,13 @@ begin
         gRSI7_H1_val_1      := GetIndicatorValue( gRSI7_H1_Handle , 1 , 0 ) ;
         gRSI7_H1_val_2      := GetIndicatorValue( gRSI7_H1_Handle , 2 , 0 ) ;
 
-        Print(  '[ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC]: 1st Tick H1 ' +
-                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )           + ' / ' +
-                'Open(1)-H1: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )                   + ' / ' +
-                'Close(1)-H1: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )                  + ' / ' +
-                'RSI7-H1(1): '  + FloatToStrF( gRSI7_H1_val_1, ffNumber , 7 , 2 )    + ' / ' +
-                'RSI7-H1(2): '  + FloatToStrF( gRSI7_H1_val_2, ffNumber , 7 , 2 )
-                );
+        { Print(  '[ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC]: 1st Tick H1 ' + }
+                { 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )           + ' / ' + }
+                { 'Open(1)-H1: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )                   + ' / ' + }
+                { 'Close(1)-H1: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )                  + ' / ' + }
+                { 'RSI7-H1(1): '  + FloatToStrF( gRSI7_H1_val_1, ffNumber , 7 , 2 )    + ' / ' + }
+                { 'RSI7-H1(2): '  + FloatToStrF( gRSI7_H1_val_2, ffNumber , 7 , 2 ) }
+                { ); }
 
 
         gH1_Setup_Rall_Extr_Buy := ( // First hour
@@ -1489,13 +1522,13 @@ begin
                 if gH1_Setup_Rall_Extr_Buy then
                 begin
                     Str( gH1_Setup_Rall_Extr_Buy , _text );
-                    Print('gH1_Setup_Rall_Extr_Buy: ' + _text );
+                    { Print('gH1_Setup_Rall_Extr_Buy: ' + _text ); }
                 end;
 
                 if gH1_Setup_Rall_Extr_Sell then
                 begin
                     Str( gH1_Setup_Rall_Extr_Sell , _text );
-                    Print('gH1_Setup_Rall_Extr_Sell: ' + _text );
+                    { Print('gH1_Setup_Rall_Extr_Sell: ' + _text ); }
                 end;
 
             end;
@@ -1801,17 +1834,17 @@ begin
                 if gTrigger_M5_Buy_Rall_Extr_retrac then
                 begin
                     Str( gTrigger_M5_Buy_Rall_Extr_retrac , _text );
-                    Print('gTrigger_M5_Buy_Rall_Extr_retrac: ' + _text );
+                    { Print('gTrigger_M5_Buy_Rall_Extr_retrac: ' + _text ); }
                     Str( _signal_EMA_Buy, _text  );
-                    Print('*** We want one signal TRUE, not BOTH: _signal_EMA_Buy: ' + _text );
+                    { Print('*** We want one signal TRUE, not BOTH: _signal_EMA_Buy: ' + _text ); }
                     Str( _signal_RegLin_Buy, _text  );
-                    Print('*** We want one signal TRUE, not BOTH: _signal_RegLin_Buy: ' + _text );
+                    { Print('*** We want one signal TRUE, not BOTH: _signal_RegLin_Buy: ' + _text ); }
                 end;
 
                 if gTrigger_M5_Sell_Rall_Extr_retrac then
                 begin
                     Str( gTrigger_M5_Sell_Rall_Extr_retrac , _text );
-                    Print('gTrigger_M5_Sell_Rall_Extr_retrac: ' + _text );
+                    { Print('gTrigger_M5_Sell_Rall_Extr_retrac: ' + _text ); }
                 end;
 
 
@@ -1834,12 +1867,12 @@ begin
 
         SetCurrencyAndTimeframe( gCurrency , PERIOD_M5 );
 
-        Print(  '[ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC]: M5 BUY TRIGGER ' +
-                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
-                'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
-                'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )
-                //'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 )
-                );
+        { Print(  '[ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC]: M5 BUY TRIGGER ' + }
+                { 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' + }
+                { 'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' + }
+                { 'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 ) }
+                { //'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 ) }
+                { ); }
 
         gTextName := 'TGRRALLEXTBUY_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
         if ObjectExists( gTextName ) then ObjectDelete( gTextName );
@@ -1858,12 +1891,12 @@ begin
     else if gTrigger_M5_Sell_Rall_Extr_retrac then
     begin
 
-        Print(  '[ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC]: M5 SELL TRIGGER ' +
-                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
-                'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
-                'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )
-                //'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 )
-                );
+        { Print(  '[ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC]: M5 SELL TRIGGER ' + }
+                { 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' + }
+                { 'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' + }
+                { 'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 ) }
+                { //'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 ) }
+                { ); }
 
         gTextName := 'TGR_RALL_EXTR_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
         if ObjectExists( gTextName ) then ObjectDelete( gTextName );
@@ -2653,6 +2686,49 @@ end;
 
 
 
+
+
+{-------------------------------------------------------------------------------------------------------}
+{***** FILE READER FUNCTION *****}
+{-------------------------------------------------------------------------------------------------------}
+
+
+
+function VarFile_Exists( varName: string ): boolean ;
+var _fullname   : string ;    
+begin    
+    _fullname := (gVarFileDirectory + varName + '.txt')   ;
+    result := FileExists( _fullname );
+end;
+
+
+
+function VarFile_Read_Then_Delete( varName: string ): string ;
+var _text       : string ;
+    _fullname   : string ;
+    _fileVar    : TextFile ;
+begin
+    
+    _fullname := (gVarFileDirectory + varName + '.txt')   ;
+    
+    AssignFile(_fileVar , _fullname );            
+    Reset(_fileVar);
+    ReadLn(_fileVar , _text );
+    CloseFile( _fileVar );
+    
+    if DeleteFile( _fullname ) then 
+        Print( '*** DELETED: ' + _fullname )
+    else
+        Print( '*** DELETIION FAILS: ' + _fullname + 'error = '+ IntToStr(GetLastError) );
+    
+    result := _text ;
+    
+end;
+
+
+
+
+
 {-------------------------------------------------------------------------------------------------------}
 {***** MAGIC NUMBER FUNCTIONS *****}
 {-------------------------------------------------------------------------------------------------------}
@@ -2671,53 +2747,6 @@ end;
 
 
 
-{-------------------------------------------------------------------------------------------------------}
-{***** POSITION SIZE CALCULATOR *****}
-{-------------------------------------------------------------------------------------------------------}
-
-{ Global variables are used ; specific variables non-global, are fed through parameters }
-function LotSizeCalculator(): double ;
-var
-    _riskdollar         :   double  ;
-    _distance           :   double  ;
-    _lot_size           :   double  ;
-begin
-
-    // Adjust Risk Size to Percent
-    gRiskSizePercent := gRiskSize  / 100.0 ;
-
-    // Calculate risk dollar and distance
-    _riskdollar := gRiskSizePercent * AccountEquity ;
-    _distance := gATR_M5_val_1 ;
-
-    // IMPORTANT:
-    // _lot_size is in FULL CONTRACT
-
-        // Example 1:
-        // risk = $100 ; dist = 15 pips (GBPJPY)
-        // lot size = $100 / (15 * 0.01) / 1000.00 = 0.67 normal contracts
-
-        // Example 2:
-        // risk = $100 ; dist = 15 pips (EURUSD)
-        // $100 / (15 * 0.0001) / 100000.00 = 0.67 normal contracts
-
-    _lot_size := _riskdollar / _distance / 100000.0 ;
-    if AnsiPos('JPY', gCurrency) > 0 then
-        _lot_size := _riskdollar / _distance / 1000.0 ;
-
-
-
-    Print('[LotSizeCalculator]: ' +
-    'AccountEquity: '   + FloatToStrF(AccountEquity , ffCurrency , 12,2 )                   + ' / ' +
-    'Risk size: '       + FloatToStrF(gRiskSize , ffFixed, 5,2) + '% '                      + ' / ' +
-    'Distance in pips: '+ FloatToStrF(_distance/(Point * gPointToPrice) , ffNumber, 7,1 )   + ' / ' +
-    'Lot size'          + FloatToStrF(_lot_size , ffNumber, 7,1 )
-            );
-
-    { use string process to catch string bit from integer value, then convert the string bit to integer }
-    result := _lot_size ;
-
-
     {/~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\
     * Mini Contract:
     * --------------
@@ -2728,7 +2757,173 @@ begin
     *
     \~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~/}
 
-end;
+    
+{-------------------------------------------------------------------------------------------------------}
+{***** SYSTEM RESET AT NEW TREND *****}
+{-------------------------------------------------------------------------------------------------------}
+    
+procedure ENTRY_NEWTREND_TREND_SYSTEM_RESET ; stdcall ;
+var     _trend_up           :   boolean ;
+        _trend_down         :   boolean ;
+        _trend_sideways     :   boolean ;
+        _systemlockstatus   :   string  ;
+        pMessageBoxAnswer   :   word    ;
+begin
+
+
+    {++ 	Identify New Trend     ++}
+    {-----------------------------------------------------------------------------------}
+    
+    if gBarName_D1_FirstTick then begin
+
+        SetCurrencyAndTimeframe( gCurrency , PERIOD_D1 );   // To set price picking on D1
+
+
+        gDriftline_D1_val_1 := GetIndicatorValue( gDriftline_D1_Handle , 3, 0 );
+        { The index for driftline value 1 recent bar has to be 3, not 1 ! }
+
+        gDriftline_D1_val_2 := GetIndicatorValue( gDriftline_D1_Handle , 4 , 0 );
+        { The index for driftline value 2 recent bar has to be 4, not 1 ! Ver_3_20180126 }
+        
+        gDriftline_D1_val_3 := GetIndicatorValue( gDriftline_D1_Handle , 5 , 0 );
+
+
+        Print(  '[ENTRY_NEWTREND_TREND_SYSTEM_RESET]: First Tick D1 ' +
+                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
+                'Open(1)-D1: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
+                'Close(1)-D1: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' +
+                'Driftline_D1: '+ FloatToStrF( gDriftline_D1_val_1 , ffFixed , 6, 4 )   
+                );
+
+
+        // Current Trend
+        // -------------------------------------------
+
+        _trend_up   :=  
+                        (   // Weekdays bar body is above driftline of D1
+                                (Open(1)    > gDriftline_D1_val_1)
+                            and (Close(1)   > gDriftline_D1_val_1)
+                            and (gD1_DayName_Curr <> 'Sun')
+                            and (gD1_DayName_Curr <> 'Sat')
+                        )   
+                    or
+                        (   // Friday bar body is above driftline D1
+                                (Open(2)    > gDriftline_D1_val_2)
+                            and (Close(2)   > gDriftline_D1_val_2)
+                            and (gD1_DayName_Curr = 'Mon')
+                                // Friday bar is BLUE in Ver_3_20180126
+                        );
+
+        _trend_down  :=  
+                        (   // Weekdays bar body is below driftline of D1
+                                (Open(1)    < gDriftline_D1_val_1)
+                            and (Close(1)   < gDriftline_D1_val_1)                                
+                            and (gD1_DayName_Curr <> 'Sun')
+                            and (gD1_DayName_Curr <> 'Sat')
+                        )
+                    or
+                        (   // Friday bar body is below driftline of D1
+                                (Open(2)    < gDriftline_D1_val_2)
+                            and (Close(2)   < gDriftline_D1_val_2)
+                            and (gD1_DayName_Curr = 'Mon')
+                        );
+
+                        
+        _trend_sideways := (not _trend_up) and (not _trend_down);
+
+
+
+        if      _trend_up       then    gTrend_D1_Curr := UP         
+        else if _trend_down     then    gTrend_D1_Curr := DOWN       
+        else if _trend_sideways then    gTrend_D1_Curr := SIDEWAY ;
+        
+
+        
+        if      (gTrend_D1_Curr in [UP , DOWN] ) 
+            and (gTrend_D1_Prev <> gTrend_D1_Curr) then begin
+            
+                gTrend_D1_NewUp_NewDown         := true     ;
+                gToggleCheck_FileVar_AtNewTrend := false    ;
+                
+        end
+        else 
+                gTrend_D1_NewUp_NewDown := false ;
+
+        
+        // Set the timeframe to next one
+        SetCurrencyAndTimeframe( gCurrency , PERIOD_H1 );                
+                
+                
+    end;        // if gBarName_D1_FirstTick then begin
+    
+
+
+    {++ 	Reset the System Locks and large profit Flag on New Trend     ++}
+    {-----------------------------------------------------------------------------------}
+    
+    SetCurrencyAndTimeframe( gCurrency , PERIOD_H1 );
+    
+    if gTrend_D1_NewUp_NewDown and (GetNumberOfOpenPositions = 0) then begin
+    
+        // Cancel large profit flag on new trend
+        gLargeProfitFlag    := false ;
+    
+        // Ask to unlock the system via file check
+        // gSystemTradeLockStatus.TXT every hour
+        
+        if gBarName_H1_FirstTick 
+            and (gToggleCheck_FileVar_AtNewTrend = false ) then begin
+        
+                if ( not VarFile_Exists( 'gSystemTradeLockStatus' ) ) then begin
+                    Pause;
+                    pMessageBoxAnswer := 
+                        MessageBox(0, 
+                            PChar('gSystemTradeLockStatus' + '.txt' + ' NOT exists'), 
+                            PChar('Please ensure the file ' + 
+                                    'gSystemTradeLockStatus' + '.txt'    + chr(10)+chr(13) +
+                                    'is available on directory: '   + chr(10)+chr(13) +
+                                    gVarFileDirectory
+                                    ), MB_OK);
+                    Pause;
+                    gSystemTradeLockStatus := LOCKED ;
+                    // No file, means the system is LOCKED
+                end
+                else begin
+                    
+                    _systemlockstatus := 
+                        VarFile_Read_Then_Delete( 'gSystemTradeLockStatus' );
+                        
+                    { case _systemlockstatus of }
+                        { 'LOCKED'    : gSystemTradeLockStatus := LOCKED      ; }
+                        { 'UNLOCKED'  : gSystemTradeLockStatus := UNLOCKED    ; }
+                    { end; }
+                    
+                    if  _systemlockstatus = 'LOCKED'        then 
+                        gSystemTradeLockStatus := LOCKED      
+                    else if _systemlockstatus = 'UNLOCKED'  then 
+                        gSystemTradeLockStatus := UNLOCKED ;
+                    
+                    
+                    gToggleCheck_FileVar_AtNewTrend := true ;
+                    
+                end;
+        
+        end;
+
+    
+    end;        // if gTrend_D1_NewUp_NewDown then begin
+    
+    
+    
+    {++ 	Return Timeframe to M5     ++}
+    {-----------------------------------------------------------------------------------}
+
+    SetCurrencyAndTimeframe( gCurrency , PERIOD_M5 );
+    
+
+end; // procedure ENTRY_NEWTREND_TREND_SYSTEM_RESET
+
+
 
 
 
@@ -2783,6 +2978,8 @@ begin
 
     {++ 	Initialise all prices to force zero values if not used     ++}
     {-----------------------------------------------------------------------------------}
+    { So that, when its value is 0.0, you know the system does not assign value ;  }
+    { something must be missing }
 
     gEstimatedEntryPrice_Buy    := 0.0;
     gEstimatedEntryPrice_Sell   := 0.0;
@@ -2795,8 +2992,9 @@ begin
     gDistance_Pips              := 0.0;
     
     gEntryPrice_Position_One    := 0.0;
-    gTakeProfitPrice_Buy        := 0.0;
-    gTakeProfitPrice_Sell       := 0.0;
+    { gTakeProfitPrice_Buy        := 0.0; }
+    { gTakeProfitPrice_Sell       := 0.0; }
+    { Do not set to zero because the value will be used by next position }
 
 
     {++ 	Calculate Estimated Entry Price     ++}
@@ -2903,6 +3101,7 @@ begin
 
         if gTrigger_M5_Rally_AllSignals_Buy 
             and (gLargeProfitFlag = false)
+            and (gSystemTradeLockStatus = UNLOCKED)
             and (gNumberOfOpenPositions = 0) then begin
     
             gMagicNumberThisPosition := 6871000 + (gNumberOfOpenPositions+1);
@@ -2928,6 +3127,7 @@ begin
         end
         else if gTrigger_M5_Rally_AllSignals_Sell 
             and (gLargeProfitFlag = false)
+            and (gSystemTradeLockStatus = UNLOCKED)
             and (gNumberOfOpenPositions = 0) then begin
 
             gMagicNumberThisPosition := 6871000 + (gNumberOfOpenPositions+1);
@@ -2956,7 +3156,8 @@ begin
         // Position 2, 3, 4, 5, 6
         // -------------------------------------------------------------------------        
         if gTrigger_M5_Rally_AllSignals_Buy 
-            and (gLargeProfitFlag = false)        
+            and (gLargeProfitFlag = false)
+            and (gSystemTradeLockStatus = UNLOCKED)
             and (gNumberOfOpenPositions in [1, 2, 3, 4, 5]) then begin
 
             
@@ -2986,6 +3187,7 @@ begin
         end
         else if gTrigger_M5_Rally_AllSignals_Sell 
             and (gLargeProfitFlag = false)
+            and (gSystemTradeLockStatus = UNLOCKED)
             and (gNumberOfOpenPositions in [1, 2, 3, 4, 5]) then begin
 
             // Check latest position if profitable
@@ -3018,8 +3220,10 @@ begin
                 
         if OrderSelect( 0 , SELECT_BY_POS , MODE_TRADES ) 
             and ( gLargeProfitFlag = false )  then begin
-                if ( OrderProfitPips >= (800.0-10.0) ) then
-                    gLargeProfitFlag := true ;
+                if ( OrderProfitPips >= (800.0-10.0) ) then begin
+                    gLargeProfitFlag        := true ;
+                    gSystemTradeLockStatus  := LOCKED ;
+                end;
         end;
         
         
@@ -3150,6 +3354,7 @@ begin
   AddOptionValue('Trade Direction' , 'SELL');       // 1
   AddOptionValue('Trade Direction' , 'BUY_SELL');   // 2  
 
+  
 end;
 
 
@@ -3163,6 +3368,7 @@ end;
 {-----Reset strategy--------------------------------------}
 procedure ResetStrategy; stdcall;
 begin
+
 
     // Set Point to Price
     // ---------------------------------------------------------------------------------
@@ -3181,8 +3387,15 @@ begin
 
     gSpreadPips     := 3.0 ;
     gSpreadInPrice  := gSpreadPips * (Point * gPointToPrice);
+
     
-    gLargeProfitFlag    := false ;
+    // Undo flag that lock the system
+    // ---------------------------------------------------------------------------------
+
+    gLargeProfitFlag                := false ;
+    gSystemTradeLockStatus          := UNLOCKED ;
+    gToggleCheck_FileVar_AtNewTrend := true ;
+
 
     {** Note:
         Point = minimum price value for the selected currency.
@@ -3191,17 +3404,25 @@ begin
     **}
 
 
+    
+    // gVarFileDirectory 
+    // ---------------------------------------------------------------------------------
+
+    gVarFileDirectory := 'C:\ForexTester3\Strategies\gVarFileDirectory\';
+    { Replace with the directory for the  }
+    
+    
     // Order Handle Initialisation
     // ---------------------------------------------------------------------------------
 
-    gP1_OrderHandle := -1;
-    gP2_OrderHandle := -1;
-    gP3_OrderHandle := -1;
-    gP4_OrderHandle := -1;
-    gP5_OrderHandle := -1;
-    gP6_OrderHandle := -1;
-    gP7_OrderHandle := -1;
-    gP8_OrderHandle := -1;
+    { gP1_OrderHandle := -1; }
+    { gP2_OrderHandle := -1; }
+    { gP3_OrderHandle := -1; }
+    { gP4_OrderHandle := -1; }
+    { gP5_OrderHandle := -1; }
+    { gP6_OrderHandle := -1; }
+    { gP7_OrderHandle := -1; }
+    { gP8_OrderHandle := -1; }
 
 
     // Establish Indicator Instances - D1
@@ -3329,11 +3550,7 @@ begin
 
 
 
-    // Initiate large profit operation
-    // ---------------------------------------------------------------------------------
 
-    gP1_LargeProfitExit_Bool := false ;
-    { This variable is  }
 
 
 
@@ -3348,8 +3565,8 @@ begin
 
     // Print the version on Journal
     // ---------------------------------------------------------------------------------
-    Print(
-        'Ver_6X_20180402 Mon'
+    Print(        
+        'Ver_6X_20180424 Tue'
         );
 
 end;
@@ -3495,6 +3712,8 @@ begin
     {**   ENTRY MANAGEMENT  **}
     {***************************************************************************************************}
 
+    ENTRY_NEWTREND_TREND_SYSTEM_RESET ;
+    
     ENTRY_MANAGEMENT_RALLY_STANDARD;
     ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC;
     ENTRY_MANAGEMENT_JAGGY;
@@ -3520,17 +3739,17 @@ begin
         SYS - Trend 1 - D1 Wave 3\Trend1_D1_Wave_3_ver4.pas}
 
     SetCurrencyAndTimeframe(gCurrency , PERIOD_D1);
-    gBarName_D1_Prev := gBarName_D1_Curr ;
+    gBarName_D1_Prev    := gBarName_D1_Curr ;
+    gTrend_D1_Prev      := gTrend_D1_Curr   ;
 
-
+    
     SetCurrencyAndTimeframe(gCurrency , PERIOD_H1);
-    gBarName_H1_Prev := gBarName_H1_Curr ;
+    gBarName_H1_Prev    := gBarName_H1_Curr ;
 
 
     { timeframe low ** at the last point }
-
-    SetCurrencyAndTimeframe( gCurrency , PERIOD_M5 ) ;
-    gBarName_M5_Prev := gBarName_M5_Curr ;
+    SetCurrencyAndTimeframe( gCurrency , PERIOD_M5 );
+    gBarName_M5_Prev    := gBarName_M5_Curr ;
 
 end;
 
