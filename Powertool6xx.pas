@@ -180,7 +180,7 @@ type
 
     //** Ver_4_20180204 **
     TMarketMode         = (RALLY , JAGGY , CANTTELL_RALLY_OR_JAGGY , FLIPFLOP  );
-    
+
     TSystemLockStatus   = (LOCKED , UNLOCKED);
 
 
@@ -201,6 +201,10 @@ var
     gRiskSizePercent        :   double                  ;
     gPointToPrice           :   double                  ;
 
+    
+    gTakeProfitPips_Param   :   double                  ;
+
+    
     gTradeDirection         :   TTradeDirection         ;       // 0 -> BUY | 1 -> SELL | 2 -> BUY_SELL
 
     // Trend Direction: UP, DOWN, SIDEWAY
@@ -208,17 +212,17 @@ var
     gTrend_D1_Prev          :   TTrendDirection         ;
     // For gTrend_D1_Prev -- Update value at the end of GetSingleTick
 
-    gTrend_D1_NewUp_NewDown :   boolean                 ;    
+    gTrend_D1_NewUp_NewDown :   boolean                 ;
     // Flag for new up trend or downtrend. Sideway trend does not count
     gSystemTradeLockStatus  :   TSystemLockStatus       ;
-    // With key for system to trade, we can activate or deactivate system 
-    // from the outside of the system. 
+    // With key for system to trade, we can activate or deactivate system
+    // from the outside of the system.
     // For example when new trend exist, but big picture is not favorable
     // after long large trend, and we don’t want the system trade it,
     // then we can deactivate the system.
-    
-    
-    
+
+
+
     gMarketMode             :   TMarketMode             ;
 
 
@@ -542,8 +546,8 @@ var
     {** Take Profit **}
     gTakeProfitPrice_Buy        : double                ;
     gTakeProfitPrice_Sell       : double                ;
-    
-    {** Large Profit Flag **}   
+
+    {** Large Profit Flag **}
     gEntryPrice_Position_One    : double                ;
     gLargeProfitFlag            : boolean               ;
 
@@ -552,10 +556,18 @@ var
 
     // General LotSize
     gLotSize_General            :   double              ;
-    
+
     gNumberOfOpenPositions      :   integer             ;
     gMagicNumberThisPosition    :   integer             ;
     gOrderHandle_General        :   integer             ;
+
+
+    {++ EXIT VARIABLES ++}
+    {-----------------------------------------------------------------------------------}
+
+    gThresholdProfitPipsFlag            :   boolean     ;
+    gThresholdProfitPips_SlowTrendFlag  :   boolean     ;
+
 
 
     {++ FILES for VARIABLE SUPPORT ++}
@@ -563,79 +575,21 @@ var
 
     // Directory
     gVarFileDirectory               :   string          ;
-    
-    // gLargeProfitFlag     
+
+    // gLargeProfitFlag
     gVarFile_gLargeProfitFlag_Text  :   string          ;
-    
+
     gToggleCheck_FileVar_AtNewTrend :   boolean         ;
-    
-    
-    
-    
-    {***    DELETE IF CONFIRMED UNUSED    ****}
-    { // P1 }
-    { gP1_LotSize                 :   double              ; }
-    { gP1_OrderHandle             :   integer             ; }
-    { gP1_OrderStyle              :   TTradePositionType  ; }
-    { gP1_OpenTime                :   TDateTime           ; }
-
-    { // P2 }
-    { gP2_LotSize                 :   double              ; }
-    { gP2_OrderHandle             :   integer             ; }
-    { gP2_OrderStyle              :   TTradePositionType  ; }
-    { gP2_OpenTime                :   TDateTime           ; }
-
-    { // P3 }
-    { gP3_LotSize                 :   double              ; }
-    { gP3_OrderHandle             :   integer             ; }
-    { gP3_OrderStyle              :   TTradePositionType  ; }
-    { gP3_OpenTime                :   TDateTime           ; }
-
-    { // P4 }
-    { gP4_LotSize                 :   double              ; }
-    { gP4_OrderHandle             :   integer             ; }
-    { gP4_OrderStyle              :   TTradePositionType  ; }
-    { gP4_OpenTime                :   TDateTime           ; }
-
-    { // P5 }
-    { gP5_LotSize                 :   double              ; }
-    { gP5_OrderHandle             :   integer             ; }
-    { gP5_OrderStyle              :   TTradePositionType  ; }
-    { gP5_OpenTime                :   TDateTime           ; }
-
-    { // P6 }
-    { gP6_LotSize                 :   double              ; }
-    { gP6_OrderHandle             :   integer             ; }
-    { gP6_OrderStyle              :   TTradePositionType  ; }
-    { gP6_OpenTime                :   TDateTime           ; }
-
-    { // P7 }
-    { gP7_LotSize                 :   double              ; }
-    { gP7_OrderHandle             :   integer             ; }
-    { gP7_OrderStyle              :   TTradePositionType  ; }
-    { gP7_OpenTime                :   TDateTime           ; }
-
-    { // P8 }
-    { gP8_LotSize                 :   double              ; }
-    { gP8_OrderHandle             :   integer             ; }
-    { gP8_OrderStyle              :   TTradePositionType  ; }
-    { gP8_OpenTime                :   TDateTime           ; }
 
 
 
-    {++ LOGIC SUPPORT ++}
+
+    {++  P1 Tracker  ++}
     {-----------------------------------------------------------------------------------}
 
-    iOrder                      :   integer             ;
 
+    gP1_Ticket                      :   integer         ;
 
-    {++ OPEN POSITION TRACKER ++}
-    {-----------------------------------------------------------------------------------}
-
-    { gP1_Profit_Pips             :   double              ; }
-    { gP1_Profit_Price            :   double              ; }
-    { gP1_LargeProfitExit_Bool    :   boolean             ; }
-    { gOpenPositionsNumber        :   integer             ;   // also OrderTotals() }
 
 
     {++ OBJECT ON CHART ++}
@@ -689,7 +643,7 @@ begin
     if gBarName_D1_FirstTick then
     begin
 
-        Print(  '[ENTRY_MANAGEMENT_RALLY_STANDARD]: DAILY TICK' );
+        { Print(  '[ENTRY_MANAGEMENT_RALLY_STANDARD]: DAILY TICK' ); }
 
 
         SetCurrencyAndTimeframe( gCurrency , PERIOD_D1 );   // To set price picking on D1
@@ -1983,13 +1937,13 @@ begin
         gBarWave_D1_val_2   := GetIndicatorValue( gBarWave_D1_Handle , 2, 4 );
 
 
-        Print(  '[ENTRY_MANAGEMENT_JAGGY]: First Tick D1 ' +
-                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
-                'Open(1)-D1: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
-                'Close(1)-D1: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' +
-                'Driftline_D1: '+ FloatToStrF( gDriftline_D1_val_1 , ffFixed , 6, 4 )   + ' / ' +
-                'BarWave_D1: '  + FloatToStrF( gBarWave_D1_val_1, ffNumber , 15 , 4 )
-                );
+        { Print(  '[ENTRY_MANAGEMENT_JAGGY]: First Tick D1 ' + }
+                { 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' + }
+                { 'Open(1)-D1: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' + }
+                { 'Close(1)-D1: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' + }
+                { 'Driftline_D1: '+ FloatToStrF( gDriftline_D1_val_1 , ffFixed , 6, 4 )   + ' / ' + }
+                { 'BarWave_D1: '  + FloatToStrF( gBarWave_D1_val_1, ffNumber , 15 , 4 ) }
+                { ); }
 
 
         // Setup D1 Buy - JAGGY
@@ -2054,19 +2008,19 @@ begin
                 if gSetup_D1_Jaggy_Buy then
                 begin
                     Str( gSetup_D1_Jaggy_Buy , _text );
-                    Print( 'gSetup_D1_Jaggy_Buy - JAGGY: ' + _text );
+                    { Print( 'gSetup_D1_Jaggy_Buy - JAGGY: ' + _text ); }
                 end;
 
                 if gSetup_D1_Jaggy_Sell then
                 begin
                     Str( gSetup_D1_Jaggy_Sell , _text );
-                    Print( 'gSetup_D1_Jaggy_Sell - JAGGY: ' + _text );
+                    { Print( 'gSetup_D1_Jaggy_Sell - JAGGY: ' + _text ); }
                 end;
 
                 if gSetup_D1_StayAway then
                 begin
                     Str( gSetup_D1_StayAway , _text );
-                    Print( 'gSetup_D1_StayAway - JAGGY: ' + _text );
+                    { Print( 'gSetup_D1_StayAway - JAGGY: ' + _text ); }
                 end;
 
             end;
@@ -2095,12 +2049,12 @@ begin
 
 
 
-        Print(  '[ENTRY_MANAGEMENT_JAGGY]: First Tick H1 SETUP ' +
-                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
-                'Open(1)-H1: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
-                'Close(1)-H1: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' +
-                'RSI7-H1(1): '+ FloatToStrF( gRSI7_H1_val_1 , ffFixed , 7, 4 )
-                );
+        { Print(  '[ENTRY_MANAGEMENT_JAGGY]: First Tick H1 SETUP ' + }
+                { 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' + }
+                { 'Open(1)-H1: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' + }
+                { 'Close(1)-H1: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' + }
+                { 'RSI7-H1(1): '+ FloatToStrF( gRSI7_H1_val_1 , ffFixed , 7, 4 ) }
+                { ); }
 
 
         gSetup_H1_Jaggy_Buy     := ( gSetup_D1_Jaggy_Buy
@@ -2125,13 +2079,13 @@ begin
                 if gSetup_H1_Jaggy_Buy then
                 begin
                     Str( gSetup_H1_Jaggy_Buy , _text );
-                    Print('gSetup_H1_Jaggy_Buy: ' + _text );
+                    { Print('gSetup_H1_Jaggy_Buy: ' + _text ); }
                 end;
 
                 if gSetup_H1_Jaggy_Sell then
                 begin
                     Str( gSetup_H1_Jaggy_Sell , _text );
-                    Print('gSetup_H1_Jaggy_Sell: ' + _text );
+                    { Print('gSetup_H1_Jaggy_Sell: ' + _text ); }
                 end;
 
             end;
@@ -2259,13 +2213,13 @@ begin
                 if gTrigger_M5_Buy_Market_Jaggy then
                 begin
                     Str( gTrigger_M5_Buy_Market_Jaggy , _text );
-                    Print('gTrigger_M5_Buy_Market_Jaggy: ' + _text );
+                    { Print('gTrigger_M5_Buy_Market_Jaggy: ' + _text ); }
                 end;
 
                 if gTrigger_M5_Sell_Market_Jaggy then
                 begin
                     Str( gTrigger_M5_Sell_Market_Jaggy , _text );
-                    Print('gTrigger_M5_Sell_Market_Jaggy: ' + _text );
+                    { Print('gTrigger_M5_Sell_Market_Jaggy: ' + _text ); }
                 end;
 
     end;    // End of [ if gBarName_M5_FirstTick then ]
@@ -2282,12 +2236,12 @@ begin
 
         SetCurrencyAndTimeframe( gCurrency , PERIOD_M5 );
 
-        Print(  '[ENTRY_MANAGEMENT_JAGGY]: M5 BUY Trigger ' +
-                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
-                'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
-                'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              {+ ' / ' +}
-                { 'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 ) }
-                );
+        { Print(  '[ENTRY_MANAGEMENT_JAGGY]: M5 BUY Trigger ' + }
+                { 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' + }
+                { 'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' + }
+                { 'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' + }
+                { 'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 )  }
+                { ); }
 
         gTextName := 'TGR_JAGGY_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
         if ObjectExists( gTextName ) then ObjectDelete( gTextName );
@@ -2303,12 +2257,12 @@ begin
     else if gTrigger_M5_Sell_Market_Jaggy then
     begin
 
-        Print(  '[ENTRY_MANAGEMENT_JAGGY]: M5 SELL Trigger ' +
-                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
-                'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
-                'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              {+ ' / ' +}
+        { Print(  '[ENTRY_MANAGEMENT_JAGGY]: M5 SELL Trigger ' + }
+                { 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' + }
+                { 'Open(1)-M5: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' + }
+                { 'Close(1)-M5: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' + }
                 { 'RSI3(1): '     + FloatToStrF( gRSI3_M5_val_1 , ffFixed , 6, 2 ) }
-                );
+                { ); }
 
         gTextName := 'TGR_JAGGY_' + FormatDateTime('YYMMDD-hh-nn', TimeCurrent);
         if ObjectExists( gTextName ) then ObjectDelete( gTextName );
@@ -2663,12 +2617,178 @@ end;
 {-------------------------------------------------------------------------------------------------------}
 {***** EXIT MANAGEMENT *****}
 {-------------------------------------------------------------------------------------------------------}
+{ When Position P1 passes the threshold gTakeProfitPips_Param - 300.0 pips, activate trailing stop to exit all positions }
 
 procedure EXIT_MANAGEMENT   ; stdcall ;
 begin
 
 
-end;
+
+    {+++    Check Large Profit on Open Position     +++}
+    {-----------------------------------------------------------------------------------}
+    // Checking large profit is always at P1
+    
+    // When position is open
+    if OrderSelect( gP1_Ticket , SELECT_BY_TICKET , MODE_TRADES ) then begin
+       if (gLargeProfitFlag = false) then begin
+                if ( OrderProfitPips >= (gTakeProfitPips_Param-10.0) ) then begin
+                
+                    gLargeProfitFlag        := true ;
+                    gSystemTradeLockStatus  := LOCKED ;
+
+                    Print( '*** LARGE PROIFT FLAG TRUE ; LOCKED FOR NEW ENTRY ; MODE_TRADES' );
+                    
+                    gP1_Ticket := -1 ;
+                    
+                end;
+       end;
+    end
+    else if OrderSelect( gP1_Ticket , SELECT_BY_TICKET , MODE_HISTORY ) then begin
+       if (gLargeProfitFlag = false) then begin
+                if ( OrderProfitPips >= (gTakeProfitPips_Param-10.0) ) then begin
+                
+                    gLargeProfitFlag        := true ;
+                    gSystemTradeLockStatus  := LOCKED ;
+                    
+                    // Reset the P1 ticket
+                    gP1_Ticket := -1 ;
+
+                    Print( '*** LARGE PROIFT FLAG TRUE ; LOCKED FOR NEW ENTRY ; MODE_HISTORY' );
+                    { NOTE NOTE NOTE }
+                    { IF THE POSITIONS EXITED DUE TO TARGET PROFIT, BEFORE REACHING
+                      THIS PART THEN THE gLargeProfitFlag WILL REMAIN FALSE !!!
+
+                      Keep the ticket of open order P1.
+
+                      One way to remedy is to check previous M5 bar if P1
+                      is still open, then the position is no longer at currrent M5 bar.
+
+                      Then you can retrieve the P1 using ticket in historical mode
+                      check the profit.
+
+                      Fortunately, this will not be an issue for using HIDDEN TARGET PROFIT
+                      Because the program controls the exit. Stop order does not control.
+
+                        }
+                end;
+       end;
+    end;
+
+
+
+
+
+
+
+    {++ 	Get Daily Trailing Stop Value     ++}
+    {-----------------------------------------------------------------------------------}
+    if gBarName_D1_FirstTick then begin
+        SetCurrencyAndTimeframe( gCurrency , PERIOD_D1 );   // To set price picking on D1
+
+        { Strong trend exit }
+        gDriftline_D1_val_1 := GetIndicatorValue( gDriftline_D1_Handle , 3, 0 );
+        { The index for driftline value 1 recent bar has to be 3, not 1 ! }
+
+        { Slow trend exit  }
+        gBarWave_D1_val_1   := GetIndicatorValue( gBarWave_D1_Handle , 1, 4 );
+        gBarWave_D1_val_2   := GetIndicatorValue( gBarWave_D1_Handle , 2, 4 );
+    end;
+
+    // Set the timeframe to next one
+    SetCurrencyAndTimeframe( gCurrency , PERIOD_M5 );
+
+
+
+    {++ 	Check P1 profit pips for threshold passing     ++}
+    {-----------------------------------------------------------------------------------}
+
+    gNumberOfOpenPositions := GetNumberOfOpenPositions ;
+    // TechnicalFunctions.PAS
+    // Convertible to MQ4
+
+    if gNumberOfOpenPositions > 0 then begin
+        if OrderSelect( 0 , SELECT_BY_POS , MODE_TRADES ) then begin
+
+            // Strong Trend Flag - trend continues
+            if ( OrderProfitPips >= (gTakeProfitPips_Param-200.0) )
+                and (gThresholdProfitPipsFlag = false) then begin
+                    gThresholdProfitPipsFlag := true ;
+                    // The flag will stay true once passing threshold
+                    // The flag will be set to false on P1 opening
+                    Print('*** PROFIT THRESHOLD PASSED *** (800 pips - 200 pips) // TRAILING STOP APPLY');
+            end;
+
+            // Slow Trend Flag - trend not continuing beyond 800 pips
+            if ( OrderProfitPips >= (gTakeProfitPips_Param-300.0) )
+                and (gThresholdProfitPips_SlowTrendFlag = false) then begin
+                    gThresholdProfitPips_SlowTrendFlag := true ;
+                    // The flag will stay true once passing threshold
+                    // The flag will be set to false on P1 opening
+                    Print('*** PROFIT THRESHOLD SLOW TREND PASSED *** (800 pips - 300 pips) // TRAILING STOP APPLY');
+            end;
+
+        end;
+    end;
+
+
+    {++ 	Apply trailing stop once passing threshold      ++}
+    {-----------------------------------------------------------------------------------}
+    // This operates on first tick M5
+    // This also expandable to MACDH crossing
+    if gBarName_M5_FirstTick then
+        if gThresholdProfitPipsFlag then begin
+            if OrderSelect( 0, SELECT_BY_POS , MODE_TRADES ) then
+                if (OrderType = tp_Buy) then begin
+                    // Trailing stop
+                    if Open(0) < gDriftline_D1_val_1 then begin
+                        CloseAllOpenPos ;
+                        // TechnicalFunctions.pas
+                        // Translatable to MQ4
+                        gLargeProfitFlag := true ;
+                        // Cancel any entry when exited through trailing stop
+                    end;
+                end
+                else if (OrderType = tp_Sell) then begin
+                    if Open(0) > gDriftline_D1_val_1 then begin
+                        CloseAllOpenPos ;
+                        // TechnicalFunctions.pas
+                        // Translatable to MQ4
+                        gLargeProfitFlag := true ;
+                        // Cancel any entry when exited through trailing stop
+                    end;
+                end;
+        end;
+
+
+    {++ 	Apply slow trend exit once passing threshold for slow trend      ++}
+    {-----------------------------------------------------------------------------------}
+    // This operates on first tick M5
+    // This also expandable to MACDH crossing
+    if gBarName_M5_FirstTick then
+        if gThresholdProfitPips_SlowTrendFlag then begin
+            if OrderSelect( 0, SELECT_BY_POS , MODE_TRADES ) then
+                if (OrderType = tp_Buy) then begin
+                    // Trailing stop
+                    if (gBarWave_D1_val_2 > 0) and (gBarWave_D1_val_1 <0) then begin
+                        CloseAllOpenPos ;
+                        // TechnicalFunctions.pas
+                        // Translatable to MQ4
+                        gLargeProfitFlag := true ;
+                        // Cancel any entry when exited through trailing stop
+                    end;
+                end
+                else if (OrderType = tp_Sell) then begin
+                    if (gBarWave_D1_val_2 < 0) and (gBarWave_D1_val_1 >0) then begin
+                        CloseAllOpenPos ;
+                        // TechnicalFunctions.pas
+                        // Translatable to MQ4
+                        gLargeProfitFlag := true ;
+                        // Cancel any entry when exited through trailing stop
+                    end;
+                end;
+        end;
+
+end;        // procedure EXIT_MANAGEMENT   ;
 
 
 
@@ -2695,34 +2815,68 @@ end;
 
 
 function VarFile_Exists( varName: string ): boolean ;
-var _fullname   : string ;    
-begin    
+var _fullname   : string ;
+begin
     _fullname := (gVarFileDirectory + varName + '.txt')   ;
     result := FileExists( _fullname );
 end;
 
 
 
-function VarFile_Read_Then_Delete( varName: string ): string ;
-var _text       : string ;
-    _fullname   : string ;
-    _fileVar    : TextFile ;
+function VarFile_Read( varName: string ): string ;
+var _text       : string    ;
+    _fullname   : string    ;
+    _fileVar    : TextFile  ;
+    _delyesno   : word      ;
 begin
-    
+
     _fullname := (gVarFileDirectory + varName + '.txt')   ;
-    
-    AssignFile(_fileVar , _fullname );            
+
+    AssignFile(_fileVar , _fullname );
     Reset(_fileVar);
     ReadLn(_fileVar , _text );
     CloseFile( _fileVar );
-    
-    if DeleteFile( _fullname ) then 
-        Print( '*** DELETED: ' + _fullname )
-    else
-        Print( '*** DELETIION FAILS: ' + _fullname + 'error = '+ IntToStr(GetLastError) );
-    
+
     result := _text ;
-    
+
+end;
+
+
+
+function VarFile_Read_Then_Delete( varName: string ): string ;
+var _text       : string    ;
+    _fullname   : string    ;
+    _fileVar    : TextFile  ;
+    _delyesno   : word      ;
+begin
+
+    _fullname := (gVarFileDirectory + varName + '.txt')   ;
+
+    AssignFile(_fileVar , _fullname );
+    Reset(_fileVar);
+    ReadLn(_fileVar , _text );
+    CloseFile( _fileVar );
+
+
+    Pause;
+    _delyesno := MessageBox(0,
+            PChar('Do you want to delete: ' + _fullname ),
+            PChar('Please Confirm'),
+            MB_YESNO+MB_ICONQUESTION);
+    Pause;
+
+    if ( _delyesno = IDYES ) then begin
+        if DeleteFile( _fullname ) then
+            Print( '*** DELETED: ' + _fullname )
+        else
+            Print( '*** DELETIION FAILS: ' + _fullname + 'error = '+ IntToStr(GetLastError) );
+    end
+    else begin
+        Print( '*** NO DELETION: ' + _fullname );
+    end;
+
+    result := _text ;
+
 end;
 
 
@@ -2757,11 +2911,11 @@ end;
     *
     \~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~/}
 
-    
+
 {-------------------------------------------------------------------------------------------------------}
 {***** SYSTEM RESET AT NEW TREND *****}
 {-------------------------------------------------------------------------------------------------------}
-    
+
 procedure ENTRY_NEWTREND_TREND_SYSTEM_RESET ; stdcall ;
 var     _trend_up           :   boolean ;
         _trend_down         :   boolean ;
@@ -2773,7 +2927,7 @@ begin
 
     {++ 	Identify New Trend     ++}
     {-----------------------------------------------------------------------------------}
-    
+
     if gBarName_D1_FirstTick then begin
 
         SetCurrencyAndTimeframe( gCurrency , PERIOD_D1 );   // To set price picking on D1
@@ -2784,28 +2938,28 @@ begin
 
         gDriftline_D1_val_2 := GetIndicatorValue( gDriftline_D1_Handle , 4 , 0 );
         { The index for driftline value 2 recent bar has to be 4, not 1 ! Ver_3_20180126 }
-        
+
         gDriftline_D1_val_3 := GetIndicatorValue( gDriftline_D1_Handle , 5 , 0 );
 
 
-        Print(  '[ENTRY_NEWTREND_TREND_SYSTEM_RESET]: First Tick D1 ' +
-                'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' +
-                'Open(1)-D1: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' +
-                'Close(1)-D1: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' +
-                'Driftline_D1: '+ FloatToStrF( gDriftline_D1_val_1 , ffFixed , 6, 4 )   
-                );
+        { Print(  '[ENTRY_NEWTREND_TREND_SYSTEM_RESET]: First Tick D1 ' + }
+                { 'Time(1): '     + FormatDateTime( 'yyyy-mm-dd hh:nn' ,  Time(1) )       + ' / ' + }
+                { 'Open(1)-D1: '  + FloatToStrF( Open(1) , ffFixed , 6, 4 )               + ' / ' + }
+                { 'Close(1)-D1: ' + FloatToStrF( Close(1) , ffFixed , 6, 4 )              + ' / ' + }
+                { 'Driftline_D1: '+ FloatToStrF( gDriftline_D1_val_1 , ffFixed , 6, 4 )    }
+                { ); }
 
 
         // Current Trend
         // -------------------------------------------
 
-        _trend_up   :=  
+        _trend_up   :=
                         (   // Weekdays bar body is above driftline of D1
                                 (Open(1)    > gDriftline_D1_val_1)
                             and (Close(1)   > gDriftline_D1_val_1)
                             and (gD1_DayName_Curr <> 'Sun')
                             and (gD1_DayName_Curr <> 'Sat')
-                        )   
+                        )
                     or
                         (   // Friday bar body is above driftline D1
                                 (Open(2)    > gDriftline_D1_val_2)
@@ -2814,10 +2968,10 @@ begin
                                 // Friday bar is BLUE in Ver_3_20180126
                         );
 
-        _trend_down  :=  
+        _trend_down  :=
                         (   // Weekdays bar body is below driftline of D1
                                 (Open(1)    < gDriftline_D1_val_1)
-                            and (Close(1)   < gDriftline_D1_val_1)                                
+                            and (Close(1)   < gDriftline_D1_val_1)
                             and (gD1_DayName_Curr <> 'Sun')
                             and (gD1_DayName_Curr <> 'Sat')
                         )
@@ -2828,98 +2982,122 @@ begin
                             and (gD1_DayName_Curr = 'Mon')
                         );
 
-                        
+
         _trend_sideways := (not _trend_up) and (not _trend_down);
 
 
 
-        if      _trend_up       then    gTrend_D1_Curr := UP         
-        else if _trend_down     then    gTrend_D1_Curr := DOWN       
+        if      _trend_up       then    gTrend_D1_Curr := UP
+        else if _trend_down     then    gTrend_D1_Curr := DOWN
         else if _trend_sideways then    gTrend_D1_Curr := SIDEWAY ;
-        
 
-        
-        if      (gTrend_D1_Curr in [UP , DOWN] ) 
+
+
+        if      (gTrend_D1_Curr in [UP , DOWN] )
             and (gTrend_D1_Prev <> gTrend_D1_Curr) then begin
-            
+
                 gTrend_D1_NewUp_NewDown         := true     ;
                 gToggleCheck_FileVar_AtNewTrend := false    ;
-                
+
         end
-        else 
+        else
                 gTrend_D1_NewUp_NewDown := false ;
 
-        
+
         // Set the timeframe to next one
-        SetCurrencyAndTimeframe( gCurrency , PERIOD_H1 );                
-                
-                
+        SetCurrencyAndTimeframe( gCurrency , PERIOD_H1 );
+
+
     end;        // if gBarName_D1_FirstTick then begin
-    
+
 
 
     {++ 	Reset the System Locks and large profit Flag on New Trend     ++}
     {-----------------------------------------------------------------------------------}
-    
+
     SetCurrencyAndTimeframe( gCurrency , PERIOD_H1 );
-    
+
     if gTrend_D1_NewUp_NewDown and (GetNumberOfOpenPositions = 0) then begin
-    
+
         // Cancel large profit flag on new trend
         gLargeProfitFlag    := false ;
-    
+
         // Ask to unlock the system via file check
         // gSystemTradeLockStatus.TXT every hour
-        
-        if gBarName_H1_FirstTick 
+
+        if gBarName_H1_FirstTick
             and (gToggleCheck_FileVar_AtNewTrend = false ) then begin
-        
+
                 if ( not VarFile_Exists( 'gSystemTradeLockStatus' ) ) then begin
                     Pause;
-                    pMessageBoxAnswer := 
-                        MessageBox(0, 
-                            PChar('gSystemTradeLockStatus' + '.txt' + ' NOT exists'), 
-                            PChar('Please ensure the file ' + 
+                    pMessageBoxAnswer :=
+                        MessageBox(0,
+                            PChar('Please ensure the file ' +
                                     'gSystemTradeLockStatus' + '.txt'    + chr(10)+chr(13) +
                                     'is available on directory: '   + chr(10)+chr(13) +
-                                    gVarFileDirectory
-                                    ), MB_OK);
+                                    gVarFileDirectory),
+                            PChar('gSystemTradeLockStatus' + '.txt' + ' NOT exists'),
+                            MB_OK);
                     Pause;
                     gSystemTradeLockStatus := LOCKED ;
                     // No file, means the system is LOCKED
                 end
                 else begin
-                    
-                    _systemlockstatus := 
+
+                    _systemlockstatus :=
                         VarFile_Read_Then_Delete( 'gSystemTradeLockStatus' );
-                        
+
                     { case _systemlockstatus of }
                         { 'LOCKED'    : gSystemTradeLockStatus := LOCKED      ; }
                         { 'UNLOCKED'  : gSystemTradeLockStatus := UNLOCKED    ; }
                     { end; }
-                    
-                    if  _systemlockstatus = 'LOCKED'        then 
-                        gSystemTradeLockStatus := LOCKED      
-                    else if _systemlockstatus = 'UNLOCKED'  then 
+
+                    if  _systemlockstatus = 'LOCKED'        then
+                        gSystemTradeLockStatus := LOCKED
+                    else if _systemlockstatus = 'UNLOCKED'  then
                         gSystemTradeLockStatus := UNLOCKED ;
-                    
-                    
-                    gToggleCheck_FileVar_AtNewTrend := true ;
-                    
+
+
+
                 end;
-        
+
         end;
 
-    
+
     end;        // if gTrend_D1_NewUp_NewDown then begin
+
+
     
     
+    {++ 	Set Profit Target Pips for New Trend     ++}
+    {-----------------------------------------------------------------------------------}
     
+    if (gToggleCheck_FileVar_AtNewTrend = false) then begin
+    
+        if VarFile_Exists('gTakeProfitPips_Param') then
+            gTakeProfitPips_Param := StrToFloat( VarFile_Read('gTakeProfitPips_Param') )
+        else
+            gTakeProfitPips_Param := 801.0 ;    
+
+        if gTakeProfitPips_Param < 250.0 then 
+            gTakeProfitPips_Param := 250.0
+        else if gTakeProfitPips_Param > 2500.0 then
+            gTakeProfitPips_Param := 2500.0;
+            
+        Print('[ENTRY_NEWTREND_TREND_SYSTEM_RESET]: gTakeProfitPips_Param ' +
+                FloatToStrF( gTakeProfitPips_Param , ffFixed , 9 , 1 )
+            );
+            
+        gToggleCheck_FileVar_AtNewTrend := true ;
+
+    end;
+        
+
     {++ 	Return Timeframe to M5     ++}
     {-----------------------------------------------------------------------------------}
 
     SetCurrencyAndTimeframe( gCurrency , PERIOD_M5 );
-    
+
 
 end; // procedure ENTRY_NEWTREND_TREND_SYSTEM_RESET
 
@@ -2990,7 +3168,7 @@ begin
     gDistance_Sell              := 0.0;
     gDistance_Sell_Pips         := 0.0;
     gDistance_Pips              := 0.0;
-    
+
     gEntryPrice_Position_One    := 0.0;
     { gTakeProfitPrice_Buy        := 0.0; }
     { gTakeProfitPrice_Sell       := 0.0; }
@@ -3062,12 +3240,12 @@ begin
 
 
     if (gTrigger_M5_Rally_AllSignals_Buy or gTrigger_M5_Rally_AllSignals_Sell) then begin
-        Print('[ENTRY_MANAGEMENT_TRENDY_ALLSIGNALS]: ' +
-        'Lot size'          + FloatToStrF(gLotSize_General , ffNumber, 7,1 )  + ' / ' +
-        'Distance in pips: '+ FloatToStrF(gDistance_Pips , ffNumber, 7,1 )    + ' / ' +
-        'AccountEquity: '   + FloatToStrF(AccountEquity , ffCurrency , 12,2 ) + ' / ' +
-        'Risk size: '       + FloatToStrF(gRiskSize , ffFixed, 5,2) + '% '
-                );
+        { Print('[ENTRY_MANAGEMENT_TRENDY_ALLSIGNALS]: ' + }
+        { 'Lot size'          + FloatToStrF(gLotSize_General , ffNumber, 7,1 )  + ' / ' + }
+        { 'Distance in pips: '+ FloatToStrF(gDistance_Pips , ffNumber, 7,1 )    + ' / ' + }
+        { 'AccountEquity: '   + FloatToStrF(AccountEquity , ffCurrency , 12,2 ) + ' / ' + }
+        { 'Risk size: '       + FloatToStrF(gRiskSize , ffFixed, 5,2) + '% ' }
+                { ); }
     end;
 
 
@@ -3077,39 +3255,25 @@ begin
     gNumberOfOpenPositions := GetNumberOfOpenPositions ;
     // TechnicalFunctions.PAS
     // Convertible to MQ4
-    
-    if gNumberOfOpenPositions <= 6 then begin
-    
-    
-        // Check Historical Trade with Large Profit
-        // -------------------------------------------------------------------------
-        
-        { if (gLargeProfitFlag = false) then  }
-            { for i:=0 to HistoryTotal - 1 do }
-            { begin }
-                { if OrderSelect(i, SELECT_BY_POS, MODE_HISTORY) then }
-                    { if (OrderProfitPips > 800.0 - 10.0) then begin }
-                        { gLargeProfitFlag := true ; }
-                        { break; }
-                    { end; }
-            { end; }
 
-            
+    if gNumberOfOpenPositions <= 6 then begin
+
 
         // Position 1
         // -------------------------------------------------------------------------
+        // P1
 
-        if gTrigger_M5_Rally_AllSignals_Buy 
+        if gTrigger_M5_Rally_AllSignals_Buy
             and (gLargeProfitFlag = false)
             and (gSystemTradeLockStatus = UNLOCKED)
             and (gNumberOfOpenPositions = 0) then begin
-    
+
             gMagicNumberThisPosition := 6871000 + (gNumberOfOpenPositions+1);
-    
+
             // Take profit since 800 pips of first position
-            gTakeProfitPrice_Buy := Open(0) + 800.0 * (Point * gPointToPrice);
+            gTakeProfitPrice_Buy := Open(0) + gTakeProfitPips_Param * (Point * gPointToPrice);
             gEntryPrice_Position_One    := Open(0) ;
-            
+
             Print( '..... sending order ......' ) ;
             SendInstantOrder(
                     Symbol,
@@ -3124,18 +3288,23 @@ begin
             Print('*** Orders Total POST: ' + IntToStr( OrdersTotal )   + ' / ' +
                   'OrderHandle (Ticket): '  + IntToStr( gOrderHandle_General )
                     ) ;
+
+            gThresholdProfitPipsFlag := false ;
+            gThresholdProfitPips_SlowTrendFlag := false ;
+            gP1_Ticket := gOrderHandle_General ;
+
         end
-        else if gTrigger_M5_Rally_AllSignals_Sell 
+        else if gTrigger_M5_Rally_AllSignals_Sell
             and (gLargeProfitFlag = false)
             and (gSystemTradeLockStatus = UNLOCKED)
             and (gNumberOfOpenPositions = 0) then begin
 
             gMagicNumberThisPosition := 6871000 + (gNumberOfOpenPositions+1);
-            
+
             // Take profit since 800 pips of first position
-            gTakeProfitPrice_Sell := Open(0) - 800.0 * (Point * gPointToPrice);
+            gTakeProfitPrice_Sell := Open(0) - gTakeProfitPips_Param * (Point * gPointToPrice);
             gEntryPrice_Position_One    := Open(0) ;
-            
+
             Print( '..... sending order ......' ) ;
             SendInstantOrder(
                     Symbol,
@@ -3149,24 +3318,30 @@ begin
                 );
             Print('*** Orders Total POST: ' + IntToStr( OrdersTotal )   + ' / ' +
                   'OrderHandle (Ticket): '  + IntToStr( gOrderHandle_General )
-                    ) ;        
+                    ) ;
+
+            gThresholdProfitPipsFlag := false ;
+            gThresholdProfitPips_SlowTrendFlag := false ;
+            gP1_Ticket := gOrderHandle_General ;
+
         end;
-        
-        
+
+
         // Position 2, 3, 4, 5, 6
-        // -------------------------------------------------------------------------        
-        if gTrigger_M5_Rally_AllSignals_Buy 
+        // -------------------------------------------------------------------------
+
+        if gTrigger_M5_Rally_AllSignals_Buy
             and (gLargeProfitFlag = false)
             and (gSystemTradeLockStatus = UNLOCKED)
             and (gNumberOfOpenPositions in [1, 2, 3, 4, 5]) then begin
 
-            
+
             // Check latest position if profitable
-            if OrderSelect((OrdersTotal-1), SELECT_BY_POS, MODE_TRADES) then 
+            if OrderSelect((OrdersTotal-1), SELECT_BY_POS, MODE_TRADES) then
                 if OrderProfitPips > 0.0 then begin
-            
+
                     gMagicNumberThisPosition := 6871000 + (gNumberOfOpenPositions+1);
-                                        
+
                     Print( '..... sending order ......' ) ;
                     SendInstantOrder(
                             Symbol,
@@ -3182,20 +3357,20 @@ begin
                           'OrderHandle (Ticket): '  + IntToStr( gOrderHandle_General )
                             ) ;
                 end;
-                    
-                    
+
+
         end
-        else if gTrigger_M5_Rally_AllSignals_Sell 
+        else if gTrigger_M5_Rally_AllSignals_Sell
             and (gLargeProfitFlag = false)
             and (gSystemTradeLockStatus = UNLOCKED)
             and (gNumberOfOpenPositions in [1, 2, 3, 4, 5]) then begin
 
             // Check latest position if profitable
-            if OrderSelect((OrdersTotal-1), SELECT_BY_POS, MODE_TRADES) then 
+            if OrderSelect((OrdersTotal-1), SELECT_BY_POS, MODE_TRADES) then
                 if OrderProfitPips > 0.0 then begin
-            
+
                     gMagicNumberThisPosition := 6871000 + (gNumberOfOpenPositions+1);
-                                        
+
                     Print( '..... sending order ......' ) ;
                     SendInstantOrder(
                             Symbol,
@@ -3209,25 +3384,15 @@ begin
                         );
                     Print('*** Orders Total POST: ' + IntToStr( OrdersTotal )   + ' / ' +
                           'OrderHandle (Ticket): '  + IntToStr( gOrderHandle_General )
-                            ) ;        
+                            ) ;
                 end;
         end;
-        
-        
-        // Check Large Profit on Open Position
-        // -----------------------------------------------------------------------------
-        // The idea is to be able to cancel the flag for the next trend
-                
-        if OrderSelect( 0 , SELECT_BY_POS , MODE_TRADES ) 
-            and ( gLargeProfitFlag = false )  then begin
-                if ( OrderProfitPips >= (800.0-10.0) ) then begin
-                    gLargeProfitFlag        := true ;
-                    gSystemTradeLockStatus  := LOCKED ;
-                end;
-        end;
-        
-        
+
+
+
     end;
+
+
 
 
 end; // End procedure ENTRY_MANAGEMENT_TRENDY_ALLSIGNALS
@@ -3329,9 +3494,6 @@ begin
   RegOption('Timeframe', ot_Timeframe, gTimeFrame );
   gTimeFrame := PERIOD_M5 ;
 
-  { RegOption('LotSize', ot_Double, gP1_LotSize ); }
-  { SetOptionDigits('LotSize', 1); }
-  { gP1_LotSize := 0.1; }
 
   RegOption('Risk Size Percent (ex/ 0.75 means 0.75%', ot_Double, gRiskSize );
   SetOptionDigits('Risk Size Percent (ex/ 0.75 means 0.75%', 2);
@@ -3348,13 +3510,13 @@ begin
   { AddOptionValue('Large Profit' , 'false');       }
   { AddOptionValue('Large Profit' , 'true');        }
 
-  
+
   RegOption     ('Trade Direction', ot_EnumType , gTradeDirection );
   AddOptionValue('Trade Direction' , 'BUY');        // 0
   AddOptionValue('Trade Direction' , 'SELL');       // 1
-  AddOptionValue('Trade Direction' , 'BUY_SELL');   // 2  
+  AddOptionValue('Trade Direction' , 'BUY_SELL');   // 2
 
-  
+
 end;
 
 
@@ -3388,6 +3550,37 @@ begin
     gSpreadPips     := 3.0 ;
     gSpreadInPrice  := gSpreadPips * (Point * gPointToPrice);
 
+
+    
+    // gVarFileDirectory
+    // ---------------------------------------------------------------------------------
+
+    gVarFileDirectory := 'C:\ForexTester3\Strategies\gVarFileDirectory\';
+    { Replace with the directory for the  }
+
+
+    
+    
+
+    // Set Profit Target Pips
+    // ---------------------------------------------------------------------------------
+    
+    if VarFile_Exists('gTakeProfitPips_Param') then
+        gTakeProfitPips_Param := StrToFloat( VarFile_Read('gTakeProfitPips_Param') )
+    else
+        gTakeProfitPips_Param := 801.0 ;    
+
+        if gTakeProfitPips_Param < 250.0 then 
+            gTakeProfitPips_Param := 250.0
+        else if gTakeProfitPips_Param > 2500.0 then
+            gTakeProfitPips_Param := 2500.0;
+    
+    Print('[ResetStrategy]: gTakeProfitPips_Param ' +
+            FloatToStrF( gTakeProfitPips_Param , ffFixed , 9 , 1 )
+        );
+    
+    
+    
     
     // Undo flag that lock the system
     // ---------------------------------------------------------------------------------
@@ -3404,25 +3597,7 @@ begin
     **}
 
 
-    
-    // gVarFileDirectory 
-    // ---------------------------------------------------------------------------------
 
-    gVarFileDirectory := 'C:\ForexTester3\Strategies\gVarFileDirectory\';
-    { Replace with the directory for the  }
-    
-    
-    // Order Handle Initialisation
-    // ---------------------------------------------------------------------------------
-
-    { gP1_OrderHandle := -1; }
-    { gP2_OrderHandle := -1; }
-    { gP3_OrderHandle := -1; }
-    { gP4_OrderHandle := -1; }
-    { gP5_OrderHandle := -1; }
-    { gP6_OrderHandle := -1; }
-    { gP7_OrderHandle := -1; }
-    { gP8_OrderHandle := -1; }
 
 
     // Establish Indicator Instances - D1
@@ -3543,7 +3718,7 @@ begin
                             gCurrency
                     ,       PERIOD_M5
                     ,       'ATR'
-                    ,       '5;Close'
+                    ,       '10;Close'
                 );
 
 
@@ -3565,7 +3740,7 @@ begin
 
     // Print the version on Journal
     // ---------------------------------------------------------------------------------
-    Print(        
+    Print(
         'Ver_6X_20180424 Tue'
         );
 
@@ -3675,25 +3850,7 @@ begin
     {**   EXIT MANAGEMENT  **}
     {***************************************************************************************************}
 
-    // if BUY order exists and fast SMA crosses slow SMA from top
-    // then close order
-    { if (gOrderHandleP1 <> -1) and (gOrderStyleP1 = tp_Buy) and }
-     { (gOpenTimeP1 <> Time(0)) and (gSMA1_Val_1 < gSMA2_Val_1 ) then }
-    { begin }
-      { CloseOrder( gOrderHandleP1 ); }
-      { gOrderHandleP1 := -1; }
-    { end; }
-
-
-
-    // if SELL order exists and fast SMA crosses slow SMA from bottom
-    // then close order
-    { if (gOrderHandleP1 <> -1) and (gOrderStyleP1 = tp_Sell) and }
-     { (gOpenTimeP1 <> Time(0)) and (gSMA1_Val_1 > gSMA2_Val_1 ) then }
-    { begin }
-      { CloseOrder( gOrderHandleP1 ); }
-      { gOrderHandleP1 := -1; }
-    { end; }
+    EXIT_MANAGEMENT ;
 
 
 
@@ -3713,7 +3870,7 @@ begin
     {***************************************************************************************************}
 
     ENTRY_NEWTREND_TREND_SYSTEM_RESET ;
-    
+
     ENTRY_MANAGEMENT_RALLY_STANDARD;
     ENTRY_MANAGEMENT_RALLY_EXTRE_RETRAC;
     ENTRY_MANAGEMENT_JAGGY;
@@ -3722,7 +3879,7 @@ begin
 
     // Roll up all trendy signals into one entry trigger for trendy market
     // Perform actual entry
-    //
+
     ENTRY_MANAGEMENT_TRENDY_ALLSIGNALS ;
 
 
@@ -3742,7 +3899,7 @@ begin
     gBarName_D1_Prev    := gBarName_D1_Curr ;
     gTrend_D1_Prev      := gTrend_D1_Curr   ;
 
-    
+
     SetCurrencyAndTimeframe(gCurrency , PERIOD_H1);
     gBarName_H1_Prev    := gBarName_H1_Curr ;
 
