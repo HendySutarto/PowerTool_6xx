@@ -49,6 +49,8 @@ library Powertool6X;
     As such filenaming will be only Powertool6X to with X in the end to denote flexible versioning.
 
     At the end of each build, the file will be staged, committed, and pushed to remote.
+    
+    Recommit.
 
 
     VERSIONING NAMING
