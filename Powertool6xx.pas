@@ -50,7 +50,7 @@ library Powertool6X;
 
     At the end of each build, the file will be staged, committed, and pushed to remote.
     
-    Back to correct version.
+    Back to correct version. 2018.05.16 (2323) - Wednesday
 
 
     VERSIONING NAMING
