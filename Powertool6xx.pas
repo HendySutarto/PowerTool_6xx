@@ -2764,6 +2764,11 @@ begin
 
     {++ 	Apply slow trend exit once passing threshold for slow trend      ++}
     {-----------------------------------------------------------------------------------}
+    
+    // Slow trend is when progress price passes lower threshold maxtarget - 300 pips
+    // Exit for slow trend is when MACDH D1 crosses from positive to negative (BUY) which is a proxy 
+    // for trend reversing in D1 frame.
+    
     // This operates on first tick M5
     // This also expandable to MACDH crossing
     if gBarName_M5_FirstTick then

@@ -1,0 +1,181 @@
+diff a/Powertool6xx.pas b/Powertool6xx.pas	(rejected hunks)
+@@ -2665,178 +2665,12 @@
+ {-------------------------------------------------------------------------------------------------------}
+ {***** EXIT MANAGEMENT *****}
+ {-------------------------------------------------------------------------------------------------------}
+-{ When Position P1 passes the threshold gTakeProfitPips_Param - 300.0 pips, activate trailing stop to exit all positions }
+ 
+ procedure EXIT_MANAGEMENT   ; stdcall ;
+ begin
+ 
+ 
+-
+-    {+++    Check Large Profit on Open Position     +++}
+-    {-----------------------------------------------------------------------------------}
+-    // Checking large profit is always at P1
+-    
+-    // When position is open
+-    if OrderSelect( gP1_Ticket , SELECT_BY_TICKET , MODE_TRADES ) then begin
+-       if (gLargeProfitFlag = false) then begin
+-                if ( OrderProfitPips >= (gTakeProfitPips_Param-10.0) ) then begin
+-                
+-                    gLargeProfitFlag        := true ;
+-                    gSystemTradeLockStatus  := LOCKED ;
+-
+-                    Print( '*** LARGE PROIFT FLAG TRUE ; LOCKED FOR NEW ENTRY ; MODE_TRADES' );
+-                    
+-                    gP1_Ticket := -1 ;
+-                    
+-                end;
+-       end;
+-    end
+-    else if OrderSelect( gP1_Ticket , SELECT_BY_TICKET , MODE_HISTORY ) then begin
+-       if (gLargeProfitFlag = false) then begin
+-                if ( OrderProfitPips >= (gTakeProfitPips_Param-10.0) ) then begin
+-                
+-                    gLargeProfitFlag        := true ;
+-                    gSystemTradeLockStatus  := LOCKED ;
+-                    
+-                    // Reset the P1 ticket
+-                    gP1_Ticket := -1 ;
+-
+-                    Print( '*** LARGE PROIFT FLAG TRUE ; LOCKED FOR NEW ENTRY ; MODE_HISTORY' );
+-                    { NOTE NOTE NOTE }
+-                    { IF THE POSITIONS EXITED DUE TO TARGET PROFIT, BEFORE REACHING
+-                      THIS PART THEN THE gLargeProfitFlag WILL REMAIN FALSE !!!
+-
+-                      Keep the ticket of open order P1.
+-
+-                      One way to remedy is to check previous M5 bar if P1
+-                      is still open, then the position is no longer at currrent M5 bar.
+-
+-                      Then you can retrieve the P1 using ticket in historical mode
+-                      check the profit.
+-
+-                      Fortunately, this will not be an issue for using HIDDEN TARGET PROFIT
+-                      Because the program controls the exit. Stop order does not control.
+-
+-                        }
+-                end;
+-       end;
+-    end;
+-
+-
+-
+-
+-
+-
+-
+-    {++ 	Get Daily Trailing Stop Value     ++}
+-    {-----------------------------------------------------------------------------------}
+-    if gBarName_D1_FirstTick then begin
+-        SetCurrencyAndTimeframe( gCurrency , PERIOD_D1 );   // To set price picking on D1
+-
+-        { Strong trend exit }
+-        gDriftline_D1_val_1 := GetIndicatorValue( gDriftline_D1_Handle , 3, 0 );
+-        { The index for driftline value 1 recent bar has to be 3, not 1 ! }
+-
+-        { Slow trend exit  }
+-        gBarWave_D1_val_1   := GetIndicatorValue( gBarWave_D1_Handle , 1, 4 );
+-        gBarWave_D1_val_2   := GetIndicatorValue( gBarWave_D1_Handle , 2, 4 );
+-    end;
+-
+-    // Set the timeframe to next one
+-    SetCurrencyAndTimeframe( gCurrency , PERIOD_M5 );
+-
+-
+-
+-    {++ 	Check P1 profit pips for threshold passing     ++}
+-    {-----------------------------------------------------------------------------------}
+-
+-    gNumberOfOpenPositions := GetNumberOfOpenPositions ;
+-    // TechnicalFunctions.PAS
+-    // Convertible to MQ4
+-
+-    if gNumberOfOpenPositions > 0 then begin
+-        if OrderSelect( 0 , SELECT_BY_POS , MODE_TRADES ) then begin
+-
+-            // Strong Trend Flag - trend continues
+-            if ( OrderProfitPips >= (gTakeProfitPips_Param-200.0) )
+-                and (gThresholdProfitPipsFlag = false) then begin
+-                    gThresholdProfitPipsFlag := true ;
+-                    // The flag will stay true once passing threshold
+-                    // The flag will be set to false on P1 opening
+-                    Print('*** PROFIT THRESHOLD PASSED *** (800 pips - 200 pips) // TRAILING STOP APPLY');
+-            end;
+-
+-            // Slow Trend Flag - trend not continuing beyond 800 pips
+-            if ( OrderProfitPips >= (gTakeProfitPips_Param-300.0) )
+-                and (gThresholdProfitPips_SlowTrendFlag = false) then begin
+-                    gThresholdProfitPips_SlowTrendFlag := true ;
+-                    // The flag will stay true once passing threshold
+-                    // The flag will be set to false on P1 opening
+-                    Print('*** PROFIT THRESHOLD SLOW TREND PASSED *** (800 pips - 300 pips) // TRAILING STOP APPLY');
+-            end;
+-
+-        end;
+-    end;
+-
+-
+-    {++ 	Apply trailing stop once passing threshold      ++}
+-    {-----------------------------------------------------------------------------------}
+-    // This operates on first tick M5
+-    // This also expandable to MACDH crossing
+-    if gBarName_M5_FirstTick then
+-        if gThresholdProfitPipsFlag then begin
+-            if OrderSelect( 0, SELECT_BY_POS , MODE_TRADES ) then
+-                if (OrderType = tp_Buy) then begin
+-                    // Trailing stop
+-                    if Open(0) < gDriftline_D1_val_1 then begin
+-                        CloseAllOpenPos ;
+-                        // TechnicalFunctions.pas
+-                        // Translatable to MQ4
+-                        gLargeProfitFlag := true ;
+-                        // Cancel any entry when exited through trailing stop
+-                    end;
+-                end
+-                else if (OrderType = tp_Sell) then begin
+-                    if Open(0) > gDriftline_D1_val_1 then begin
+-                        CloseAllOpenPos ;
+-                        // TechnicalFunctions.pas
+-                        // Translatable to MQ4
+-                        gLargeProfitFlag := true ;
+-                        // Cancel any entry when exited through trailing stop
+-                    end;
+-                end;
+-        end;
+-
+-
+-    {++ 	Apply slow trend exit once passing threshold for slow trend      ++}
+-    {-----------------------------------------------------------------------------------}
+-    // This operates on first tick M5
+-    // This also expandable to MACDH crossing
+-    if gBarName_M5_FirstTick then
+-        if gThresholdProfitPips_SlowTrendFlag then begin
+-            if OrderSelect( 0, SELECT_BY_POS , MODE_TRADES ) then
+-                if (OrderType = tp_Buy) then begin
+-                    // Trailing stop
+-                    if (gBarWave_D1_val_2 > 0) and (gBarWave_D1_val_1 <0) then begin
+-                        CloseAllOpenPos ;
+-                        // TechnicalFunctions.pas
+-                        // Translatable to MQ4
+-                        gLargeProfitFlag := true ;
+-                        // Cancel any entry when exited through trailing stop
+-                    end;
+-                end
+-                else if (OrderType = tp_Sell) then begin
+-                    if (gBarWave_D1_val_2 < 0) and (gBarWave_D1_val_1 >0) then begin
+-                        CloseAllOpenPos ;
+-                        // TechnicalFunctions.pas
+-                        // Translatable to MQ4
+-                        gLargeProfitFlag := true ;
+-                        // Cancel any entry when exited through trailing stop
+-                    end;
+-                end;
+-        end;
+-
+-end;        // procedure EXIT_MANAGEMENT   ;
++end;
+ 
+ 
+ 
